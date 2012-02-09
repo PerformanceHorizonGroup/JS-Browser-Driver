@@ -1,0 +1,24 @@
+{
+	"server":{
+		"SocketIO":{
+			"host":"localhost",
+			"port":8090
+		},
+		"browserDriverUrl":"http://localhost:8090/BrowserDriver.html",
+		"otherUrlMappings":{
+		    "public_html":"/public_html"
+		}
+	},
+	"browsers":[{
+		"name":"Firefox",
+		"app":"firefox",
+		"args":[]
+	},{
+		"name":"Chrome",
+		"app":"chromium-browser",
+		"args":[]
+	}],
+	"testsPath":"tests",
+	"userLibsPath":"lib",
+	"interactiveMode":true
+}

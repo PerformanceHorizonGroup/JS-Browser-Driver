@@ -1,0 +1,5 @@
+#!/usr/local/bin/node
+
+var srv=require('../server/server');
+srv.processArguments(process.argv);
+srv.run();

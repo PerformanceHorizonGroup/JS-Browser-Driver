@@ -1,0 +1,198 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>JS Browser Driver</title>
+<meta charset=utf-8>
+<link rel="shortcut icon" type="image/ico" href="img/favicon.ico">
+<!-- Styles -->
+<link rel="stylesheet" type="text/css" href="css/bootstrap.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
+<!-- Scripts -->
+<script src="js/bootstrap.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<script type="text/javascript" src="http://jqueryrotate.googlecode.com/svn/trunk/jQueryRotate.js"></script>
+<script type="text/javascript" src="http://gsgd.co.uk/sandbox/jquery/easing/jquery.easing.1.3.js"></script>
+<script src="js/setting.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+
+<div class="logo"><img src="img/cog.png" id="cog" alt=""></div>
+
+<h2>JS Browser Driver - Controls</h2>
+
+<div>
+    <fieldset id="browsersList" class="control-group">
+        <legend>
+            Browsers:
+        </legend>
+        <div browsername="IE" class="browser-control">
+            <input type="checkbox"> IE 
+            <button class="connect-browser btn btn-success">
+                <i class="icon-ok-circle icon-white"></i> Connect
+            </button>
+            <a href="http://phgma.local/assets/js/testing/suite/html/BrowserDriver.html?socketIOServerProtocol=http&amp;socketIOServerHost=computercho&amp;socketIOServerPort=8090&amp;browserName=IE">url</a>
+        </div>
+        <div browsername="Chrome" class="browser-control">
+            <input type="checkbox"> Chrome 
+            <button class="connect-browser btn btn-warning">
+                <i class="icon-remove-circle icon-white"></i> Disconnect
+            </button>
+            <a href="http://phgma.local/assets/js/testing/suite/html/BrowserDriver.html?socketIOServerProtocol=http&amp;socketIOServerHost=computercho&amp;socketIOServerPort=8090&amp;browserName=Chrome">url</a>
+        </div>
+        <div browsername="Firefox" class="browser-control">
+            <input type="checkbox"> Firefox 
+            <button class="connect-browser btn btn-success">
+                <i class="icon-ok-circle icon-white"></i> Connect
+            </button>
+            <a href="http://phgma.local/assets/js/testing/suite/html/BrowserDriver.html?socketIOServerProtocol=http&amp;socketIOServerHost=computercho&amp;socketIOServerPort=8090&amp;browserName=Firefox">url</a>
+        </div>
+        <div class="test-info running">
+                load Admin-&gt;Capture
+		</div>
+    </fieldset>
+</div>
+
+<div class="clear"></div>
+
+<div>
+    <fieldset>
+        <legend>
+            Tests:
+        </legend>
+        <button id="reloadTests" class="btn btn-info">
+            <i class="icon-refresh icon-white"></i> reload tests
+        </button>
+        <div id="testsList">
+            <div class="test-details" filename="loadAdminCapture.js">
+                <input type="checkbox"> ( "<span class="test-name">load Admin-&gt;Capture</span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="test-details" filename="pages\admin\publishers\test.js">
+                <input type="checkbox"> ( "<span class="test-name">Admin-&gt;Publishers</span>" ), <span class="assertions">23</span>
+            </div>
+            <div class="test-details" filename="pages\pages.js">
+                <input type="checkbox"> ( "<span class="test-name">Login user "console"</span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="test-details" filename="pages\pages.js">
+                <input type="checkbox"> ( "<span class="test-name">ensureAccountType publisher ( p:2:-:m:EUR - PeteWins )</span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="test-details" filename="pages\pages.js">
+                <input type="checkbox"> ( "<span class="test-name">ensureAccountType advertiser ( a:5-300042:-:m:GBP )</span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="test-details" filename="pages\pages.js">
+                <input type="checkbox"> ( "<span class="test-name">Load publisher pages ( p:2:-:m:EUR - PeteWins )</span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="test-details" filename="pages\pages.js">
+                <input type="checkbox"> ( "<span class="test-name">Load advertiser pages ( a:5-300042:-:m:GBP - Petes Test Shop </span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="test-details" filename="pages\reporting\performance\test.js">
+                <input type="checkbox"> ( "<span class="test-name">Reporting-&gt;Performance</span>" ), <span class="assertions">45</span>
+            </div>
+            <div class="test-details" filename="pages\test4.js">
+                <input type="checkbox"> ( "<span class="test-name">auto-generated-test (4)</span>" ), <span class="assertions">1</span>
+            </div>
+            <div class="clear"></div>
+            <div>
+            <fieldset class="module">
+                <legend>
+                    Record page events
+                </legend>
+                <div class="test-details" filename="recordPageEvents.js">
+                    <input type="checkbox"> ( "<span class="test-name">Record page events</span>" ), <span class="assertions">1</span>
+                </div>
+            </fieldset>
+            </div>
+        </div>
+    </fieldset>
+    <button id="runSelected" class="btn btn-success">
+        <i class="icon-play-circle icon-white"></i> Run selected test(s) on selected browser(s)
+    </button>
+</div>
+
+<div class="clear"></div>
+
+<div>
+    <h3>Console:</h3>
+    <div id="console">
+        <div class="done passed">
+            [18:58:34, Chrome] test "load Admin-&gt;Capture", message: ""click" on button#selectScrubRule"
+        </div>
+        <div class="done failed">
+            [18:58:34, Chrome] test "load Admin-&gt;Capture", message: "Can not find div#scrubRuleSelectionBox&gt;div.ct&gt;div.inputs&gt;label:eq(14)&gt;input to fire click"
+        </div>
+        <div class="done failed">
+            [18:58:33, Chrome] test "load Admin-&gt;Capture", message: "Can not find div#scrubRuleSelectionBox&gt;div.ct&gt;div.inputs&gt;label:eq(9)&gt;input to fire click"
+        </div>
+        <div class="done failed">
+            [18:58:33, Chrome] test "load Admin-&gt;Capture", message: "Can not find div#scrubRuleSelectionBox&gt;div.ct&gt;div.inputs&gt;label:eq(8)&gt;input to fire click"
+        </div>
+        <div class="done failed">
+            [18:58:33, Chrome] test "load Admin-&gt;Capture", message: "Can not find div#scrubRuleSelectionBox&gt;div.ct&gt;div.inputs&gt;label:eq(7)&gt;input to fire click"
+        </div>
+        <div class="done failed">
+            [18:58:33, Chrome] test "load Admin-&gt;Capture", message: "Can not find div#scrubRuleSelectionBox&gt;div.ct&gt;div.inputs&gt;label:eq(6)&gt;input to fire click"
+        </div>
+        <div class="done passed">
+            [18:58:32, Chrome] test "load Admin-&gt;Capture", message: ""click" on button#addRule"
+        </div>
+        <div class="done passed">
+            [18:58:32, Chrome] test "load Admin-&gt;Capture", message: ""click" on button#addField"
+        </div>
+        <div class="done passed">
+            [18:58:31, Chrome] test "load Admin-&gt;Capture", message: ""load" on [object Object]"
+        </div>
+        <div class="done passed">
+            [18:58:31, Chrome] test "load Admin-&gt;Capture"
+        </div>
+        <div>
+            [18:58:30, Chrome] test start: "load Admin-&gt;Capture"
+        </div>
+    </div>
+    
+<div class="clear"></div>
+
+<!-- the event recording utility -->
+
+<div class="record-page-event-controls ui-draggable">
+    <div>
+    <button class="close-bar btn btn-warning">
+        <i class="icon-remove-circle icon-white"></i> Close
+    </button> <span class="separator">|</span> url to open: <input type="text" class="page-url"> (hit Enter) <span class="separator">|</span> 
+    <button class="record btn btn-danger">
+       <i class="icon-time icon-white"></i> Record
+    </button>
+    </div>
+    <div class="clear"></div>
+    <div class="recording-options">
+        <label class="form-inline">
+            <input type="checkbox" class="record-ajax-data"> Record AJAX data
+        </label>
+        <label class="form-inline">
+            <input type="checkbox" class="mock-server-side"> Mock the server side
+        </label>
+        <label class="form-inline">
+            <input type="checkbox" class="record-hvoer-events"> Record <em>hover</em>
+            events
+        </label>
+    </div>
+    <div class="clear"></div>
+    <div class="recording-tools">
+        <button class="generate-test-code btn btn-primary">
+            <i class="icon-cog icon-white"></i> Generate Test
+        </button>
+    </div>
+    <div class="clear"></div>
+    <div class="recorded-events-list">
+        <span class="title">Recorded events</span>:
+        <div class="items">
+        </div>
+    </div>
+</div>
+<!-- end record-page-event-controls -->
+
+</div>
+<!-- end wrap -->
+
+</body>
+</html>

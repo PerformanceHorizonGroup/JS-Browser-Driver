@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>BrowserDriver API</title>
+        <meta charset="utf-8">
+        <script type="text/javascript" src="resources/jquery-1.4.3.min.js">
+        </script>
+        <link rel="stylesheet" href="resources/style.css" type="text/css">
+        <link rel="stylesheet" href="resources/PHGDoc.css" type="text/css">
+        <script type="text/javascript">
+            function renderer(api){
+                function printNS(obj){ // print menu items
+                    var html = '<ul>', titleStr = '';
+                    if (obj.type == 'api') 
+                        titleStr = obj.name.split('.').pop();
+                    else 
+                        if (obj.type == 'namespace') 
+                            titleStr = '<em>namespace</em> ' + obj.name.split('.').pop();
+                        else 
+                            if (obj.type == 'module') 
+                                titleStr = '<em>module</em> ' + obj.name.split('.').pop();
+                            else {
+                                titleStr = '<span>' + obj.name.split('.').pop();
+                                if (obj.flags && !$.isEmptyObject(obj.flags)) {
+                                    var flags = [];
+                                    for (var f in obj.flags) 
+                                        if (obj.flags[f]) 
+                                            flags.push(f.charAt(0));
+                                    if (flags.length) 
+                                        titleStr += ' <span class="object-attributes">(' + flags.join() + ')</span>';
+                                }
+                                titleStr += '</span>';
+                            }
+                    html += '<li class="object-title obj-link" ns-path="' + obj.name + '">' + titleStr + '</li>';
+                    
+                    var children = [];
+                    for (var c in obj.children) 
+                        children.push(obj.children[c]);
+                    children.sort(function(a, b){
+                        return (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
+                    });
+                    for (var i = 0; i < children.length; ++i) {
+                        html += '<li class="children-list">' + printNS(children[i]) + '</li>';
+                    }
+                    
+                    html += '</ul>';
+                    return html;
+                }
+                $('body').append('<table width="100%"><tr><td id="apiTree" width="30%" valign="top">' + printNS(api.ns) + '</td><td id="selectionInfo" valign="top"></td></tr></table>');
+                var storage = {
+                    hideInherited: false
+                };
+                $('.hide-inherited').live('click', function(){
+                    storage.hideInherited = this.checked;
+                    renderObj(storage.obj);
+                });
+                function renderObj(obj){
+                    storage.obj = obj;
+                    var hierarchy = [[obj.name, obj]], html = '', list;
+                    if ('extends' in obj) {
+                        var parentClass = obj['extends'], parentClassObj = api.getNSObject(parentClass);
+                        do {
+                            var hObj = [parentClass, null];
+                            hierarchy.unshift(hObj);
+                            if (parentClassObj) {
+                                hObj[1] = parentClassObj;
+                                if ('extends' in parentClassObj) {
+                                    parentClass = parentClassObj['extends'];
+                                    parentClassObj = api.getNSObject(parentClass);
+                                }
+                                else 
+                                    parentClass = null;
+                            }
+                            else 
+                                parentClass = null;
+                        }
+                        while (parentClass);
+                        var cls = hierarchy[0];
+                        html += '<div class="hierarchy"><em>hierarchy:</em> <div class="hierarchy-item"><div class="hierarchy-item-title' + (cls[1] ? (' obj-link" ns-path="' + cls[0] + '"') : '"') + '>' + cls[0] + '</div>';
+                        var ending = '<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title">' + hierarchy[hierarchy.length - 1][0] + '</div></div>' +
+                        '</div></div>';
+                        for (var i = 1; i < hierarchy.length - 1; i++) {
+                            html += '<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title' + (hierarchy[i][1] ? (' obj-link" ns-path="' + hierarchy[i][0] + '"') : '"') + '>' + hierarchy[i][0] + '</div>';
+                            ending += '</div>';
+                        }
+                        html += ending;
+                    }
+                    html += '<div>' + (obj.type != 'api' ? obj.type : '') + ' <strong>' + obj.name + '</strong>';
+                    if (!$.isEmptyObject(obj.flags)) {
+                        var flags = [];
+                        for (var f in obj.flags) 
+                            if (obj.flags[f]) 
+                                flags.push(f);
+                        if (flags.length) 
+                            html += '<div><span class="object-attributes">( ' + flags.join() + ' )</span></div>';
+                    }
+                    if ('definedIn' in obj) 
+                        html += '<div>defined in: ' + obj.definedIn.split('/').pop() + '</div>';
+                    if (obj.description) 
+                        html += '<p>' + obj.description + '</p>';
+                    html += '</div>';
+                    html += '<div class="clear">';
+                    if (obj.type == 'class') 
+                        html += '<input type="checkbox"' + (storage.hideInherited ? ' checked' : '') + ' class="hide-inherited"> hide inherited';
+                    html += '</div>';
+                    
+                    /**
+                     * TO-DO: add a check to each member block to determine if it needs to be expandable
+                     */
+                    function getMembersList(type){
+                        var members = {}, list = [];
+                        // put members from all parents in the hash
+                        for (var i = storage.hideInherited ? (hierarchy.length - 1) : 0; i < hierarchy.length; ++i) 
+                            if (hierarchy[i][1]) // if this class is in the API
+                                for (var m in hierarchy[i][1][type]) 
+                                    if (!(m in members)) // skip overriden members
+                                        members[m] = $.extend({
+                                            definingClass: hierarchy[i][1].name
+                                        }, hierarchy[i][1][type][m]);
+                        // move the members to a list
+                        for (var m in members) 
+                            list.push(members[m]);
+                        // sort the list ASC by member name
+                        list.sort(function(a, b){
+                            return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+                        });
+                        return list;
+                    }
+                    // config
+                    if ('config' in obj) {
+                        list = getMembersList('config');
+                        if (list.length) {
+                            html += '<div class="members">' +
+                            '<div class="members-head"><em class="members-title">configuration options:</em><div class="defined-by">defined by</div></div>';
+                            for (var i = 0; i < list.length; ++i) {
+                                html += '<div class="member">' +
+                                '<div class="member-expand">&nbsp;</div>' +
+                                '<div class="member-meta"><div class="defining-class obj-link" ns-path="' +
+                                list[i].definingClass +
+                                '">' +
+                                list[i].definingClass +
+                                '</div></div>' +
+                                '<div class="member-title"><strong>' +
+                                list[i].name +
+                                '</strong> : ' +
+                                list[i].dataType +
+                                '</div>' +
+                                '<div class="member-summary">';
+                                var summary = list[i].summary || list[i].description;
+                                if (summary) 
+                                    html += summary.substring(0, 100);
+                                if (summary.length > 100) 
+                                    html += '...';
+                                html += '</div>' +
+                                //										'<div class="member-summary">'+(list[i].summary||list[i].description).substring(0, 100)+'...</div>' +
+                                '<div class="member-description">' +
+                                (list[i].description || list[i].summary) +
+                                '</div>' +
+                                '</div>';
+                            }
+                            html += '</div>';
+                        }
+                    }
+                    // properties
+                    if ('properties' in obj) {
+                        list = getMembersList('properties');
+                        if (list.length) {
+                            html += '<div class="members">' +
+                            '<div class="members-head"><em class="members-title">properties:</em><div class="defined-by">defined by</div></div>';
+                            for (var i = 0; i < list.length; ++i) {
+                                html += '<div class="member">' +
+                                '<div class="member-expand">&nbsp;</div>' +
+                                '<div class="member-meta"><div class="defining-class obj-link" ns-path="' +
+                                list[i].definingClass +
+                                '">' +
+                                list[i].definingClass +
+                                '</div></div>' +
+                                '<div class="member-title"><strong>' +
+                                list[i].name +
+                                '</strong> : ' +
+                                list[i].dataType +
+                                '</div>' +
+                                '<div class="member-summary">';
+                                var summary = list[i].summary || list[i].description;
+                                if (summary) 
+                                    html += summary.substring(0, 100);
+                                if (summary.length > 100) 
+                                    html += '...';
+                                html += '</div>' +
+                                '<div class="member-description">' +
+                                (list[i].description || list[i].summary) +
+                                '</div>' +
+                                '</div>';
+                            }
+                            html += '</div>';
+                        }
+                    }
+                    // methods
+                    if ('methods' in obj) {
+                        list = getMembersList('methods');
+                        if (list.length) {
+                            html += '<div class="members"><div class="members-head"><em class="members-title">methods:</em><div class="defined-by">defined by</div></div>';
+                            for (var i = 0; i < list.length; ++i) {
+                                html += '<div class="member">' +
+                                '<div class="member-expand">&nbsp;</div>' +
+                                '<div class="member-meta"><div class="defining-class obj-link" ns-path="' +
+                                list[i].definingClass +
+                                '">' +
+                                list[i].definingClass +
+                                '</div></div>' +
+                                '<div class="member-title"><strong>' +
+                                list[i].name +
+                                '</strong>( ';
+                                var paramsList = [];
+                                for (var p = 0; p < list[i].params.length; ++p) {
+                                    var paramStr = list[i].params[p].dataType + ' <span class="pre">' + list[i].params[p].name + '</span>';
+                                    if (list[i].params[p].optional) 
+                                        paramStr = '[' + paramStr + ']';
+                                    paramsList.push(paramStr);
+                                }
+                                html += paramsList.join(', ');
+                                html += ' ) : ' + (list[i].returns.type || 'void');
+                                if (!$.isEmptyObject(list[i].flags)) {
+                                    var flags = [];
+                                    for (var f in list[i].flags) 
+                                        if (list[i].flags[f]) 
+                                            flags.push(f);
+                                    if (flags.length) {
+                                        html += ' [';
+                                        for (var f = 0; f < flags.length; ++f) 
+                                            html += '<span class="method-flag">' + flags[f] + '</span>]';
+                                        html += ']';
+                                    }
+                                }
+                                html += '</div>' +
+                                '<div class="member-summary">' +
+                                (list[i].summary || list[i].description) +
+                                '</div>' +
+                                '<div class="member-description"><div>' +
+                                (list[i].description || list[i].summary) +
+                                '</div>';
+                                // add Parameters and Returns (if any) to member-description 
+                                if (paramsList.length) {
+                                    html += 'Parameters:<ul>';
+                                    for (var p = 0; p < list[i].params.length; ++p) {
+                                        html += '<li><span class="pre">' + list[i].params[p].name + '</span> : ' + list[i].params[p].dataType + '<div>';
+                                        if (list[i].params[p].optional) 
+                                            html += '(optional) ';
+                                        html += (list[i].params[p].description) + '</div></li>'; // ||list[i].params[p].summary
+                                    }
+                                    html += '</ul>';
+                                }
+                                if (list[i].returns.type != 'void') {
+                                    html += 'Returns:<ul>';
+                                    html += '<li><span class="pre">' + list[i].returns.type + '</span><div>' + list[i].returns.summary + '</div></li>';
+                                    html += '</ul>';
+                                }
+                                html += '</div></div>';
+                            }
+                            html += '</div>';
+                        }
+                    }
+                    // events
+                    if ('events' in obj) {
+                        list = getMembersList('events');
+                        if (list.length) {
+                            html += '<div class="members"><div class="members-head"><em class="members-title">events:</em><div class="defined-by">defined by</div></div>';
+                            for (var i = 0; i < list.length; ++i) {
+                                html += '<div class="member">' +
+                                '<div class="member-expand">&nbsp;</div>' +
+                                '<div class="member-meta"><div class="defining-class obj-link" ns-path="' +
+                                list[i].definingClass +
+                                '">' +
+                                list[i].definingClass +
+                                '</div></div>' +
+                                '<div class="member-title"><strong>' +
+                                list[i].name +
+                                '</strong>( ';
+                                var paramsString = [];
+                                for (var p = 0; p < list[i].params.length; ++p) 
+                                    paramsString.push(list[i].params[p].dataType + ' <span class="pre">' + list[i].params[p].name + '</span>');
+                                html += paramsString.join(', ');
+                                html += ' )</div>' +
+                                '<div class="member-summary">' +
+                                (list[i].summary || list[i].description) +
+                                '</div>' +
+                                '<div class="member-description"><div>' +
+                                (list[i].description || list[i].summary) +
+                                '</div>';
+                                // add Parameters (if any) to member-description 
+                                if (paramsString.length) {
+                                    html += 'Parameters:<ul>';
+                                    for (var p = 0; p < list[i].params.length; ++p) 
+                                        html += '<li><span class="pre">' + list[i].params[p].name + '</span> : ' + list[i].params[p].dataType + '<div>' + (list[i].params[p].description) + '</div></li>';
+                                    html += '</ul>';
+                                }
+                                html += '</div></div>';
+                            }
+                            html += '</div>';
+                        }
+                    }
+                    
+                    $('#selectionInfo').html(html);
+                }
+                $('.obj-link').live('click', function(){
+                    location.hash = $(this).attr('ns-path');
+                    //				renderObj(api.getNSObject($(this).attr('ns-path')));
+                });
+                $('.member-expand').live('click', function(){
+                    $(this).parent().toggleClass('expanded');
+                });
+                
+                function renderObjectFromHash(){
+                    $('.object-title.active').removeClass('active');
+                    var obj = api.getNSObject(location.hash.substring(1));
+                    if (obj) {
+                        $('.object-title[ns-path=' + obj.name + ']').addClass('active');
+                        renderObj(obj);
+                    }
+                }
+                if (location.hash != '') 
+                    renderObjectFromHash();
+                $(window).bind('hashchange', renderObjectFromHash);
+            }
+            
+            var api = {
+                "ns": {
+                    "name": "BrowserDriver API",
+                    "type": "api",
+                    "children": {
+                        "browserManager": {
+                            "description": "",
+                            "summary": "",
+                            "children": [],
+                            "config": {},
+                            "properties": {},
+                            "methods": {
+                                "create": {
+                                    "description": "Creates and returns an instance of browserManager.BrowserManager\r",
+                                    "summary": "",
+                                    "name": "create",
+                                    "params": [{
+                                        "description": "",
+                                        "name": "cfg",
+                                        "optional": false,
+                                        "dataType": "Object"
+                                    }],
+                                    "returns": {
+                                        "type": "browserManager.BrowserManager",
+                                        "summary": ""
+                                    },
+                                    "flags": {}
+                                }
+                            },
+                            "events": {},
+                            "definedIn": "../server/browserManager.js",
+                            "type": "module",
+                            "name": "browserManager"
+                        },
+                        "webServer": {
+                            "description": "",
+                            "summary": "",
+                            "children": [],
+                            "config": {},
+                            "properties": {},
+                            "methods": {
+                                "createServer": {
+                                    "description": "Creates and configures the web server and Socket.IO, and BrowserManager instance that will use them.\r",
+                                    "summary": "",
+                                    "name": "createServer",
+                                    "params": [{
+                                        "description": "The application configuration object.\r",
+                                        "name": "cfg",
+                                        "optional": false,
+                                        "dataType": "Object"
+                                    }],
+                                    "returns": {
+                                        "type": "Object",
+                                        "summary": "Plain object with \"server\", \"browserManager\" and \"io\" properties.\r"
+                                    },
+                                    "flags": {}
+                                }
+                            },
+                            "events": {},
+                            "definedIn": "../server/webServer.js",
+                            "type": "module",
+                            "name": "webServer"
+                        },
+                        "BrowserDriver": {
+                            "type": "namespace",
+                            "name": "BrowserDriver",
+                            "children": {
+                                "Driver": {
+                                    "description": "Creates and manages the connection with the server and the execution environment for tests.\r It does not currently provide any means for directly running tests and monitoring test execution and instead relies\r on a separate testing library to do the job (uses QUnit by default). The testing library is hooked by adaptor\r which ensures the library receives proper input and test output is sent to the environment. This way the rules for\r writing a test are those of the library and nothing else.\r\t ",
+                                    "summary": "",
+                                    "config": {},
+                                    "properties": {
+                                        "adaptor": {
+                                            "description": "",
+                                            "summary": "The adaptor object must have initialize() method which will be called when the driver initializes.\r",
+                                            "name": "adaptor",
+                                            "dataType": "Object"
+                                        },
+                                        "testSources": {
+                                            "description": "A hash with loaded (or still loading) test source files with the relative file paths as keys.\r\t\t ",
+                                            "summary": "",
+                                            "name": "testSources",
+                                            "dataType": "Object"
+                                        },
+                                        "userLibs": {
+                                            "description": "A hash with loaded (or still loading) user libraries with the relative file paths as keys.\r\t\t ",
+                                            "summary": "",
+                                            "name": "userLibs",
+                                            "dataType": "Object"
+                                        },
+                                        "testCache": {
+                                            "description": "A list of all loaded tests.\r\t\t ",
+                                            "summary": "",
+                                            "name": "testCache",
+                                            "dataType": "Array"
+                                        },
+                                        "testsQueue": {
+                                            "description": "The list of scheduled tests.\r\t\t ",
+                                            "summary": "",
+                                            "name": "testsQueue",
+                                            "dataType": "Array"
+                                        }
+                                    },
+                                    "methods": {
+                                        "onTestStart": {
+                                            "description": "Logger method to be called when a test starts running.\r",
+                                            "summary": "",
+                                            "name": "onTestStart",
+                                            "params": [{
+                                                "description": "A hash with details about the test. Expected keys are \"module\", \"fileName\" and \"name\".\r\t\t ",
+                                                "name": "data",
+                                                "optional": false,
+                                                "dataType": "Object"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "onTestDone": {
+                                            "description": "Logger method to be called when a test is over.\r",
+                                            "summary": "",
+                                            "name": "onTestDone",
+                                            "params": [{
+                                                "description": "A hash with details about the test and the results. Expected keys are \"module\", \"fileName\", \"name\", \"failed\", \"passed\" and \"total\".\r\t\t ",
+                                                "name": "data",
+                                                "optional": false,
+                                                "dataType": "Object"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "onAssertion": {
+                                            "description": "Logger method to be called when an assertion is evaluated.\r",
+                                            "summary": "",
+                                            "name": "onAssertion",
+                                            "params": [{
+                                                "description": "A hash with details about the test and the assertion. Expected keys are \"module\", \"fileName\", \"name\", \"result\", \"expected\", \"actual\" and \"message\".\r\t\t ",
+                                                "name": "data",
+                                                "optional": false,
+                                                "dataType": "Object"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "onTestRead": {
+                                            "description": "Must be called when a test is loaded.\r",
+                                            "summary": "",
+                                            "name": "onTestRead",
+                                            "params": [{
+                                                "description": "A hash with details about the test. Expected keys are \"module\", \"fileName\", \"name\", \"fn\" and \"expect\".\r",
+                                                "name": "testData",
+                                                "optional": false,
+                                                "dataType": "Object"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "reset": {
+                                            "description": "Remove all cached data for tests, loaded user libraries and stylesheets.\r\t\t ",
+                                            "summary": "",
+                                            "name": "reset",
+                                            "params": [],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "attachScript": {
+                                            "description": "Appends a SCRIPT element to the HEAD.\r",
+                                            "summary": "",
+                                            "name": "attachScript",
+                                            "params": [{
+                                                "description": "The \"src\" attribute to set.\r",
+                                                "name": "src",
+                                                "optional": false,
+                                                "dataType": "String"
+                                            }, {
+                                                "description": "A callback to invoke when the element loads.\r",
+                                                "name": "cb",
+                                                "optional": false,
+                                                "dataType": "Function"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "loadLib": {
+                                            "description": "Loads a JS library.\r",
+                                            "summary": "",
+                                            "name": "loadLib",
+                                            "params": [{
+                                                "description": "The path of the JS library file relative to the \"userLibsPath\" property in the test configuration file (may or may not include the .js file extension).\r",
+                                                "name": "lib",
+                                                "optional": false,
+                                                "dataType": "String"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        },
+                                        "loadTestSource": {
+                                            "description": "Loads a test source file so tests in it are registered in the environment and ready (but not scheduled) to be run. All loaded tests\r are added to the \"testCache\" list.\r",
+                                            "summary": "",
+                                            "name": "loadTestSource",
+                                            "params": [{
+                                                "description": "The path of the test file relative to the \"testsPath\" property in the test configuration file.\r",
+                                                "name": "src",
+                                                "optional": false,
+                                                "dataType": "String"
+                                            }],
+                                            "returns": {
+                                                "type": "void",
+                                                "summary": ""
+                                            },
+                                            "flags": {}
+                                        }
+                                    },
+                                    "events": {
+                                        "testRead": {
+                                            "description": "Fires when a test has been loaded.\r",
+                                            "summary": "",
+                                            "name": "testRead",
+                                            "params": [{
+                                                "description": "",
+                                                "name": "this",
+                                                "optional": false,
+                                                "dataType": "BrowserDriver.Driver"
+                                            }, {
+                                                "description": "",
+                                                "name": "testData",
+                                                "optional": false,
+                                                "dataType": "Object"
+                                            }]
+                                        },
+                                        "reset": {
+                                            "description": "Fires after the environment has been reset.\r",
+                                            "summary": "",
+                                            "name": "reset",
+                                            "params": [{
+                                                "description": "",
+                                                "name": "this",
+                                                "optional": false,
+                                                "dataType": "BrowserDriver.Driver"
+                                            }]
+                                        },
+                                        "loadLib": {
+                                            "description": "Fires after a user library's SCRIPT tag has been loaded.\r",
+                                            "summary": "",
+                                            "name": "loadLib",
+                                            "params": [{
+                                                "description": "",
+                                                "name": "this",
+                                                "optional": false,
+                                                "dataType": "BrowserDriver.Driver"
+                                            }, {
+                                                "description": "",
+                                                "name": "lib",
+                                                "optional": false,
+                                                "dataType": "String"
+                                            }]
+                                        },
+                                        "beforeLoadTestSource": {
+                                            "description": "Fires before a SCRIPT tag is inserted into the DOM. Returning false from a handler will abort the operation.\r",
+                                            "summary": "",
+                                            "name": "beforeLoadTestSource",
+                                            "params": [{
+                                                "description": "",
+                                                "name": "this",
+                                                "optional": false,
+                                                "dataType": "BrowserDriver.Driver"
+                                            }, {
+                                                "description": "",
+                                                "name": "src",
+                                                "optional": false,
+                                                "dataType": "String"
+                                            }]
+                                        }
+                                    },
+                                    "definedIn": "../client/browserDriver.js",
+                                    "flags": {
+                                        "singleton": true
+                                    },
+                                    "type": "class",
+                                    "name": "BrowserDriver.Driver",
+                                    "extends": "EventEmitter"
+                                },
+                                "Manager": {
+                                    "description": "Creates and manages the user interface inside a browser window which lets the user interactively manage slave browsers and execute tests.\r The interface can be loaded in more than one browser window and all instances will receive updates from the server.\r ",
+                                    "summary": "",
+                                    "config": {},
+                                    "properties": {
+                                        "testModules": {
+                                            "description": "A list of all loaded test modules. Each module keeps a list of all its tests.\r\t ",
+                                            "summary": "",
+                                            "name": "testModules",
+                                            "dataType": "Array"
+                                        }
+                                    },
+                                    "methods": {},
+                                    "events": {},
+                                    "definedIn": "../client/manager/manager.js",
+                                    "flags": {
+                                        "singleton": true
+                                    },
+                                    "type": "class",
+                                    "name": "BrowserDriver.Manager"
+                                }
+                            }
+                        }
+                    },
+                    "description": ""
+                }
+            };
+            api.getNSObject = function(path, autoCreate){
+                var obj = this.ns, pathNames = typeof path == 'string' ? path.split('.') : path;
+                if (typeof path == 'string') 
+                    pathNames = path.split('.');
+                else {
+                    pathNames = path;
+                    path = path.join('.');
+                }
+                if (pathNames.length) {
+                    var currentPath = [];
+                    if (pathNames[0] == this.ns.name) 
+                        pathNames.shift();
+                    while (pathNames.length) {
+                        var p = pathNames.shift();
+                        currentPath.push(p);
+                        if (!(p in obj.children)) {
+                            if (autoCreate) 
+                                obj.children[p] = {
+                                    type: 'namespace',
+                                    name: currentPath.join('.'),
+                                    children: {}
+                                };
+                            else 
+                                return null;
+                        }
+                        obj = obj.children[p];
+                    }
+                }
+                return obj;
+            };
+            $(document).ready(function(){
+				api.ns.description=$('#BrowserDriverDescription').html();
+                renderer(api);
+            });
+        </script>
+    </head>
+    <body>
+        <div style="display:none">
+            <div id="BrowserDriverDescription">
+                    <h1 class="entry-title">The BrowserDriver testing environment</h1>
+                    <div class="clear">
+                    </div>
+                    <div class="alignright next-post">
+                    </div>
+                    <div class="clear">
+                    </div>
+                    <p>
+                        A JS environment aiming to simplify writing and running automated UI tests in JS&nbsp;( though appears it can do much more <img src="http://blog.performancehorizon.com/wp-includes/images/smilies/icon_wink.gif" alt=";-)" class="wp-smiley">). It does not offer a complete set of testing tools but only the base infrastructure needed to allow automated or manual execution of JavaScript in one or more web browsers and reporting results. The specifics of running tests or just fiddling with a website are left to test libraries or utilities. The environment is built in a very modular fashion and in fact even the browser is not a necessary component – anything that could connect to the server and impersonate a slave instance will be accepted.
+                    </p>
+                    <p>
+                        <img src="resources/images/BD1.png" alt="" title="BrowserDriver structure" width="400" height="271" class="aligncenter size-full wp-image-291">
+                    </p>
+                    <p>
+                        Everything is written in JS so should be very easy for anyone, using BrowserDriver to test their JS code, to understand its inner details and suggest or implement extensions or fix bugs. It’s built around a central server which should be able on its own to fire up browser instances and load and run the necessary tests as specified in a configuration file and/or with command line arguments. Tests can also be run interactively by the user from the management console.
+                    </p>
+                    <p>
+                        There are no specific rules for how tests should be written because the environment relies on third-party testing libraries for direct test management and uses adaptors to catch events like when tests start, complete or make an assertion. This way tests can be written for any testing library that the developer likes as long as there is an adaptor available for it. For example a test written for the QUnit can be run with the provided adaptor and may look like this:
+                    </p>
+                    <div class="syntaxhighlighter " id="highlighter_58167">
+                        <div class="lines">
+                            <div class="line alt1">
+                                <code class="number">
+                                    1.
+                                </code>
+                                <span class="content"><span class="block" style="margin-left: 0px !important;">
+                                        <code class="plain">
+                                            asyncTest(
+                                        </code>
+                                        <code class="string">
+                                            "UI test"
+                                        </code>
+                                        <code class="plain">
+                                            , 
+                                        </code>
+                                        <code class="keyword">
+                                            function
+                                        </code>
+                                        <code class="plain">
+                                            (){
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt2">
+                                <code class="number">
+                                    2.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 32px !important;">
+                                        <code class="plain">
+                                            expect(2);
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt1">
+                                <code class="number">
+                                    3.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 32px !important;">
+                                        <code class="plain">
+                                            ok(
+                                        </code>
+                                        <code class="keyword">
+                                            true
+                                        </code>
+                                        <code class="plain">
+                                            , 
+                                        </code>
+                                        <code class="string">
+                                            "one successfull assertion"
+                                        </code>
+                                        <code class="plain">
+                                            );
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt2">
+                                <code class="number">
+                                    4.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 32px !important;">
+                                        <code class="plain">
+                                            setTimeout(
+                                        </code>
+                                        <code class="keyword">
+                                            function
+                                        </code>
+                                        <code class="plain">
+                                            (){
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt1">
+                                <code class="number">
+                                    5.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 64px !important;">
+                                        <code class="plain">
+                                            ok(
+                                        </code>
+                                        <code class="keyword">
+                                            true
+                                        </code>
+                                        <code class="plain">
+                                            , 
+                                        </code>
+                                        <code class="string">
+                                            "another successfull assertion"
+                                        </code>
+                                        <code class="plain">
+                                            );
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt2">
+                                <code class="number">
+                                    6.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 64px !important;">
+                                        <code class="plain">
+                                            start(); 
+                                        </code>
+                                        <code class="comments">
+                                            // finish this test
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt1">
+                                <code class="number">
+                                    7.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 32px !important;">
+                                        <code class="plain">
+                                            }, 1000);
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt2">
+                                <code class="number">
+                                    8.
+                                </code>
+                                <span class="content"><span class="block" style="margin-left: 0px !important;">
+                                        <code class="plain">
+                                            });
+                                        </code>
+                                    </span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <p>
+                        <em>The server:</em>
+                        <br>
+                        It’s built on node.js and using a configuration file it can be set to run in automatic mode (to start all configured browsers or wait for them to connect after startup ) and run tests right away or interactive mode (waits for the user to send commands from a management console). Many of the options in the configuration file can be overridden with arguments passed on the command line.
+                        <br>
+                        <img src="resources/images/BD-server.png" alt="" title="Structure of the BrowserDriver server" width="349" height="165" class="aligncenter size-full wp-image-290">
+                        <br>
+                        The server uses Socket.IO to communicate with slaves and manager apps and provides HTTP server to serve files from configured directories.
+                    </p>
+                    <p>
+                        <em>Slave browsers:</em>
+                        <br>
+                        Each slave browser provides the test execution environment, runs the tests as commanded by the server and reports back test results. When testing UI, to avoid cross-domain issues the HTML page that loads the environment must be part of the same site that is going to be tested. This is needed because test code runs outside of the page being tested.
+                    </p>
+                    <p>
+                        <img src="resources/images/BD-browser.png" alt="" title="A slave browser captured by BrowserDriver" width="400" height="180" class="aligncenter size-full wp-image-289">
+                    </p>
+                    <p>
+                        Although BrowserDriver relies on testing libraries (currently it has an adaptor for QUnit) it suggests a different approach from how those libraries usually work – tests are not run inside a simulated website environment and the test code does not need to be added to the tested website – instead the test code is given access to the live website running inside an IFRAME. Of course it’s also possible that the test code does not need to access the provided IFRAME at all when for example its purpose is to test server-side operations by invoking actions on the server and checking what the responses look like.
+                    </p>
+                    <p>
+                        <em>Management console:</em>
+                        <br>
+                        The console is loaded in a browser window and allows the user to monitor the activity in the environment and manage tests, slave browsers and test execution. Multiple consoles can be open at the same time and the server will post updates to all of them and try to keep them in sync.
+                    </p>
+                    <p>
+                        When tests become quite complex BrowserDriver allows frequently used, independed utility code to be put in separate reusable files. Tests then only need to mark their dependency on such libraries and the execution environment will make sure the libraries are loaded before dependent tests are run. If for example we had some useful code in the file util.js a test will request that file to be loaded like this:
+                    </p>
+                    <div class="syntaxhighlighter " id="highlighter_470325">
+                        <div class="lines">
+                            <div class="line alt1">
+                                <code class="number">
+                                    1.
+                                </code>
+                                <span class="content"><span class="block" style="margin-left: 0px !important;">
+                                        <code class="plain">
+                                            driver.loadLib(
+                                        </code>
+                                        <code class="string">
+                                            "util"
+                                        </code>
+                                        <code class="plain">
+                                            ); 
+                                        </code>
+                                        <code class="comments">
+                                            // load this code library before executing the following tests
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt2">
+                                <code class="number">
+                                    2.
+                                </code>
+                                <span class="content"><span class="block" style="margin-left: 0px !important;">
+                                        <code class="plain">
+                                            test(
+                                        </code>
+                                        <code class="string">
+                                            "UI test"
+                                        </code>
+                                        <code class="plain">
+                                            , 
+                                        </code>
+                                        <code class="keyword">
+                                            function
+                                        </code>
+                                        <code class="plain">
+                                            (){
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt1">
+                                <code class="number">
+                                    3.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 32px !important;">
+                                        <code class="plain">
+                                            someUtilityFunction(); 
+                                        </code>
+                                        <code class="comments">
+                                            // call a function from the util.js file included above
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt2">
+                                <code class="number">
+                                    4.
+                                </code>
+                                <span class="content">
+                                    <code class="spaces">
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </code>
+                                    <span class="block" style="margin-left: 32px !important;">
+                                        <code class="plain">
+                                            ok(
+                                        </code>
+                                        <code class="keyword">
+                                            true
+                                        </code>
+                                        <code class="plain">
+                                            , 
+                                        </code>
+                                        <code class="string">
+                                            "one successfull assertion"
+                                        </code>
+                                        <code class="plain">
+                                            );
+                                        </code>
+                                    </span></span>
+                            </div>
+                            <div class="line alt1">
+                                <code class="number">
+                                    5.
+                                </code>
+                                <span class="content"><span class="block" style="margin-left: 0px !important;">
+                                        <code class="plain">
+                                            });
+                                        </code>
+                                    </span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <p>
+                        The ability to manually run scripts from the management console makes BrowserDriver suitable not only for testing but also for executing arbitrary code that needs to act upon the target website. The only requirement is that the code behaves like a regular test case and reports to the environment when it completes its work. An example is the “test” script named “Record page events” (in the example test suite) which records events in the IFRAME which can later be replayed in the form of a generated test script.
+                    </p>
+                    <p>
+                        The project is just starting up and functionality may change at any time (change to better of course <img src="http://blog.performancehorizon.com/wp-includes/images/smilies/icon_wink.gif" alt=";-)" class="wp-smiley">) and new features will be added.
+                    </p>
+            </div>
+        </div>
+    </body>
+</html>

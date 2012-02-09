@@ -1,0 +1,43 @@
+.record-page-event-controls{
+	position:absolute;
+	top:20px;
+	left:50px;
+	width:620px;
+	padding: 3px 5px;
+	border-radius: 5px;
+    background: #F8F8F8 url(c.gif) no-repeat top right;
+    border: 1px solid #D7D7D7;
+    box-shadow: 1px 3px 4px #888;
+}
+.page-url{
+	width: 250px;
+}
+.recorded-events-list{
+	display:none;
+	position:absolute;
+	top:-20px;
+	left:640px;
+	width:400px;
+	height:300px;
+	padding: 3px 5px;
+	border-radius: 5px;
+    background-color: #F8F8F8;
+    border: 1px solid #D7D7D7;
+    box-shadow: 1px 3px 4px #888;
+}
+.recorded-events-list .items{
+	height:280px;
+	overflow:auto;
+}
+
+.separator { 
+	color: #999; 
+	padding: 0 5px;
+}
+.browser-control, .recording-options label { 
+	float: left; 
+	margin: 10px 10px 10px 0;
+}
+.test-info, .recording-tools { 
+	clear: left; 
+}

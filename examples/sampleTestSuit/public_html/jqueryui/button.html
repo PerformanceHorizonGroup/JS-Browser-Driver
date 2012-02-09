@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>jQueryUI Button</title>
+	<meta charset="utf-8">
+	
+	<link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.8.16.custom.css">
+	<script type="text/javascript" src="js/jquery-1.6.2.min.js"></script> 
+	<script type="text/javascript" src="js/jquery-ui-1.8.16.custom.min.js"></script> 
+</head>
+<body>
+	
+	<p>Visit <a href="http://jqueryui.com/demos/">http://jqueryui.com/demos/</a> for updates and more demos</p>
+	<p><a href="index.html">Back to index</a></p>
+	<p>&nbsp;</p>
+	<p><strong>!!! There is a <a href="http://bugs.jqueryui.com/ticket/5295">bug</a> in jQueryUI 1.8.x - the "ui-state-hover" class does not always get removed when it has to. The last assertion will fail because of that.</strong></p>
+	
+	<script>
+		$('#create').live('click', function(){
+			$( "input:submit, a, button", ".demo" ).button();
+			$( "a", ".demo" ).click(function() { return false; });
+		});
+	</script>
+	
+	
+	<p><button id="create">Init buttons</button></p>
+	<div class="demo">
+	
+		<button>A button element</button>
+		
+		<input type="submit" value="A submit button">
+		
+		<a href="#">An anchor</a>
+	
+	</div><!-- End demo -->
+	
+	<div class="demo-description" style="display: none; ">
+		<p>Examples of the markup that can be used for buttons: A button element, an input of type submit and an anchor.</p>
+	</div><!-- End demo-description -->
+</body>
+</html>

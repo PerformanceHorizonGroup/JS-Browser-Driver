@@ -1,0 +1,132 @@
+body{
+	font-family:sans-serif;
+}
+.clear{
+	clear:both;
+}
+#apiTree{
+	padding:5px 10px 5px 0px;
+	background-color:#FAFAFA;
+	border:solid 1px #dfdfdf;
+	-moz-border-radius: 5px; 
+	-webkit-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	border-radius: 5px;
+}
+#apiTree ul{
+	padding-left:10px;
+}
+#selectionInfo{
+	padding:10px;
+	border:solid 1px #dfdfdf;
+	border-left:0px;
+	-moz-border-radius: 0px 5px 5px 0px; 
+	-webkit-border-radius: 0px 5px 5px 0px;
+	-khtml-border-radius: 0px 5px 5px 0px;
+	border-radius: 0px 5px 5px 0px;
+}
+li.object-title{
+	list-style-type:none;
+}
+li.object-title.active{
+	background-color:#def7fe;
+}
+.obj-link{
+	cursor:default;
+}
+.obj-link:hover{
+	background-color:#def7fe;
+}
+.object-attributes{
+	font-size:smaller;
+	color:#999999;
+}
+
+li.children-list{
+	list-style-type:none;
+}
+
+.members-title{
+}
+.members-head{
+	border-bottom:1px solid #CCCCCC;
+	margin-top:5px;
+	padding-top:5px;
+	padding-right:15px;
+}
+.member{
+	border:1px solid #CCCCCC;
+	border-top:0px;
+	padding: 5px 15px 10px;
+	position:relative;
+}
+.hierarchy{
+	margin-left:20px;
+	padding:0px 10px;
+	float:right;
+}
+.hierarchy-item-title{
+	cursor:default;
+	padding-right:5px;
+}
+.hierarchy-sub-item .hierarchy-item, .hierarchy-sub-item .hierarchy-item-title{
+	padding-left:10px;
+}
+.hierarchy-sub-item .hierarchy-item-title{
+	background-image:url(images/arrow_end.gif);
+	background-repeat:no-repeat;
+	background-position:left center;
+}
+
+.defined-by{
+	font-style:italic;
+}
+.member-meta, .defined-by{
+	float:right;
+	text-align:right;
+	margin-left:20px;
+}
+
+.defining-class{
+	color:#888888;
+}
+.defining-class:hover{
+	color:#000000;
+}
+
+.pre{
+	font-family:monospace;
+}
+
+.member-expand{
+	background:#EEF5FF url(images/collapsed.png) no-repeat 2px 5px;
+	cursor:pointer;
+	position:absolute;
+	width:12px;
+	top:0px;
+	left:0px;
+	bottom:0px;
+}
+.member-expand:hover, .member.expanded .member-expand{
+	background-color:#DDE5FF;
+}
+.member.expanded .member-expand{
+	background-image:url(images/expanded.png);
+}
+
+.member-summary, .member-description{
+	padding-top:5px;
+}
+.member-summary, .member.expanded .member-description{
+		display:block;
+}
+.member.expanded .member-summary, .member-description{
+	display:none;
+}
+
+.method-flag{
+	color:#999999;
+}
+
+
+

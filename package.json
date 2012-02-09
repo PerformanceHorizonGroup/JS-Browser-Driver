@@ -1,0 +1,31 @@
+{
+	"name":"browser-driver",
+	"version":"0.1.3",
+	"author":"PHG <techies@performancehorizon.com>",
+	"description":"a server to capture and manage browsers",
+	"contributors":[{
+		"name":"Georgi Kostov",
+		"email":"georgi.kostov@performancehorizon.com"
+	}],
+	"bin":{
+		"browser-driver":"./bin/server"
+	},
+	"main":"./server/server",
+	"repository":{
+		"type":"git",
+		"url":"https://github.com/PerformanceHorizonGroup/JS-Browser-Driver.git"
+	},
+	"keywords":[
+		"test",
+		"browser",
+		"driver"
+	],
+	"dependencies" :{
+	    "connect":"*",
+	    "socket.io":">=0.7.x"
+	},
+	"license":"MIT",
+	"engine":{
+		"node":">=0.5.3"
+	}
+}
