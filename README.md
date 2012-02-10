@@ -45,10 +45,10 @@ Within the conf.json config file, you need to provide an absolute link to each b
 
     With Firefox, you unfortunately need to create a new profile first, via their Profile Manager. You can do this through the settings, or from the command line you pass the `-ProfileManager` switch to the executable. Lets assume that the profile name you allocate is something really original like "test":
     
-    - **OS X**, simply point the user data dir to /tmp
+    - **OS X**,
         
             {
-                "name":"Chrome",
+                "name":"Firefox",
                 "app":"/Applications/Firefox.app/Contents/MacOS/firefox",
                 "args":["-P test"]
             }
