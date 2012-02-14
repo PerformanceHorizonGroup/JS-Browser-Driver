@@ -1,7 +1,6 @@
 {
 	"server":{
 		"SocketIO":{
-			"host":"localhost",
 			"port":8090
 		},
 		"browserDriverUrl":"http://localhost:8090/BrowserDriver.html",
