@@ -17,7 +17,5 @@
 		"app":"chromium-browser",
 		"args":[]
 	}],
-	"testsPath":"tests",
-	"userLibsPath":"lib",
 	"interactiveMode":true
 }
