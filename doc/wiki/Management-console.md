@@ -1,0 +1,3 @@
+The console included with the project can be loaded in a browser window and allows the user to monitor the activity in the environment and manage tests, slave browsers and test execution. Multiple consoles can be open at the same time and the [server](The-server) will post updates to all of them and try to keep them in sync.
+
+The url where the console can be found depends on the [configuration](Configuration-file) of the server but if it's run on `localhost` as by default the url will be `http://localhost/manager/manager.html` .
