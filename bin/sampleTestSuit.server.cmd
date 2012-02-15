@@ -1,1 +1,1 @@
-node ../server/server.js configFileName="../examples/sampleTestSuit/testing.conf.json"
+node ../server/server.js configFileName="../examples/sampleTestSuite/testing.conf.json"
