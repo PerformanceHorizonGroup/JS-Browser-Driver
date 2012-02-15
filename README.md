@@ -85,18 +85,18 @@ Within the conf.json config file, you need to provide an absolute link to each b
 ## Examples
 Ok, so enough with all the waffle, lets run some pre-baked tests included in the project! Depending on how your `npm` is set up, you need to direct the browser driver to the location of the example tests config file. Before you try to action this, please ensure that you have set up at least 1 browser inside that config file - see above for the gory details. 
 
-Ok, so in this example, we will fire up the Browser Driver on OS X, by pointing to the example tests config:
+Ok, so in this example, we will fire up the BrowserDriver on OS X, by pointing to the example tests config:
 
     browser-driver configFileName="/usr/local/lib/node_modules/browser-driver/examples/sampleTestSuite/testing.conf.json"
     
-If all is well, you should see the Browser Driver start up:
+If all is well, you should see the BrowserDriver start up:
 
     testing server started
     reading configuration file /usr/local/lib/node_modules/browser-driver/examples/sampleTestSuite/testing.conf.json
     Server listening on port 8090 at localhost
     Go to http://localhost:8090/manager/manager.html to manage and run tests
 
-Time to go to the location it tells you in the above message, `http://localhost:8090/manager/manager.html`, and see the shiny config page. From here, you can select the browser(s) that you set up and connect to, pick the tests you want to run, and you will see the feedback in real-time in the console. 
+Time to go to the location it tells you in the above message, `http://localhost:8090/manager/manager.html`, and see the shiny manager page. From here, you can select the browser(s) that you set up and connect to, pick the tests you want to run, and you will see the feedback in real-time in the console. 
 
 ## License
 The MIT License, because it rules.
