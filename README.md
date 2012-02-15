@@ -1,5 +1,7 @@
 # JS Browser Driver
-The JS Browser Driver is a Node.JS project aiming to simplify writing and running automated UI tests in JS. 
+The JS Browser Driver is a Node.JS project aiming to simplify writing and running automated UI tests in JS.
+
+_(more info can be found in the [Wiki](https://github.com/PerformanceHorizonGroup/JS-Browser-Driver/wiki) pages)_
 
 ## Installation
 
@@ -10,6 +12,8 @@ Note, if the above command growls at you, you probably don't have npm installed.
     curl http://npmjs.org/install.sh | sh
 
 ## How to use
+Test files are organized in suites and for each suite there needs to be a [configuration file](https://github.com/PerformanceHorizonGroup/JS-Browser-Driver/wiki/Configuration-file) written so the server will know how to prepare the resources that tests will need.
+
 If you have installed the npm package globally (with `-g`) then you can do:
 
     browser-driver configFileName="path/to/xxx.conf.json"
@@ -18,7 +22,7 @@ or if not then go to the package directory and start it with node like:
 
     node server/server.js configFileName="path/to/xxx.conf.json"
 
-# Browser set up
+### Setting up the browsers
 Within the conf.json config file, you need to provide an absolute link to each browser. Predictably, this isn't particularly easy as there can be various conflicts with browser windows that are already open. We have gone through this pain many times, so here's a guide for the major browsers:
 
 - **Chrome**
@@ -41,12 +45,20 @@ Within the conf.json config file, you need to provide an absolute link to each b
                 "args":[]
             }
 
+    - **Ubuntu**
+    
+            {
+                "name":"Chrome",
+                "app":"chromium-browser",
+                "args":[]
+            }
+
 - **Firefox**
 
     
     - **OS X**
         
-    With Firefox, you unfortunately need to create a new profile first, via their Profile Manager. You can do this through the settings, or from the command line you pass the `-ProfileManager` switch to the executable. Lets assume that the profile name you allocate is something really original like "test":
+        With Firefox, you unfortunately need to create a new profile first, via their Profile Manager. You can do this through the settings, or from the command line you pass the `-ProfileManager` switch to the executable. Lets assume that the profile name you allocate is something really original like "test":
     
             {
                 "name":"Firefox",
@@ -59,6 +71,14 @@ Within the conf.json config file, you need to provide an absolute link to each b
             {
                 "name":"Firefox",
                 "app":"C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+                "args":[]
+            }
+
+    - **Ubuntu**
+    
+            {
+                "name":"Firefox",
+                "app":"firefox",
                 "args":[]
             }
 
