@@ -33,31 +33,32 @@ Within the conf.json config file, you need to provide an absolute link to each b
                 "args":["--user-data-dir=/tmp"]
             }
         
-    - **Windows**, puppies are crying already...
+    - **Windows**
     
             {
                 "name":"Chrome",
-                "app":"",
+                "app":"C:\\Program Files (x86)\\GoogleChromePortable\\GoogleChromePortable.exe",
                 "args":[]
             }
 
 - **Firefox**
 
+    
+    - **OS X**
+        
     With Firefox, you unfortunately need to create a new profile first, via their Profile Manager. You can do this through the settings, or from the command line you pass the `-ProfileManager` switch to the executable. Lets assume that the profile name you allocate is something really original like "test":
     
-    - **OS X**,
-        
             {
                 "name":"Firefox",
                 "app":"/Applications/Firefox.app/Contents/MacOS/firefox",
                 "args":["-P test"]
             }
         
-    - **Windows**, puppies are crying already...
+    - **Windows**
     
             {
                 "name":"Firefox",
-                "app":"",
+                "app":"C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
                 "args":[]
             }
 
@@ -66,12 +67,12 @@ Ok, so enough with all the waffle, lets run some pre-baked tests included in the
 
 Ok, so in this example, we will fire up the Browser Driver on OS X, by pointing to the example tests config:
 
-    browser-driver configFileName="/usr/local/lib/node_modules/browser-driver/examples/sampleTestSuit/testing.conf.json"
+    browser-driver configFileName="/usr/local/lib/node_modules/browser-driver/examples/sampleTestSuite/testing.conf.json"
     
 If all is well, you should see the Browser Driver start up:
 
     testing server started
-    reading configuration file /usr/local/lib/node_modules/browser-driver/examples/sampleTestSuit/testing.conf.json
+    reading configuration file /usr/local/lib/node_modules/browser-driver/examples/sampleTestSuite/testing.conf.json
     Server listening on port 8090 at localhost
     Go to http://localhost:8090/manager/manager.html to manage and run tests
 
