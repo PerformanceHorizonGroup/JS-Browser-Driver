@@ -1,8 +1,6 @@
 {
 	"server":{
-		"SocketIO":{
-			"port":8090
-		},
+		"port":8090,
 		"browserDriverUrl":"http://localhost:8090/BrowserDriver.html",
 		"otherUrlMappings":{
 		    "public_html":"/public_html"
@@ -10,11 +8,11 @@
 	},
 	"browsers":[{
 		"name":"Firefox",
-		"app":"firefox",
+		"app":"D:\\Program Files (x86)\\Mozilla Firefox 3.0\\firefox.exe",
 		"args":[]
 	},{
 		"name":"Chrome",
-		"app":"chromium-browser",
+		"app":"D:\\Program Files (x86)\\GoogleChromePortable\\GoogleChromePortable.exe",
 		"args":[]
 	}],
 	"interactiveMode":true
