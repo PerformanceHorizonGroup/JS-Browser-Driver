@@ -41,7 +41,7 @@ exports.createServer=function (cfg){
 //					msg=JSON.parse(msg);
 					switch(msg.id){
 						default:
-							browserManager.handleClientMessage(client, msg);
+							browserManager.handleBrowserMessage(client, msg);
 					}
 				})
 				.on('disconnect', function (){

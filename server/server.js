@@ -2,20 +2,19 @@
  * TO-DO: running this in interactive mode and managing it by running commands in the console (for CI integration).
  */
 var path=require('path'),
-	extend=require('./lib/other/jquery.extend'),
-	Connect = require('connect');
+	extend=require('./lib/other/jquery.extend');
 
 var host, 
 	post, 
 	cfg={ // configuration defaults
 		server:{
-			/**
-			 * TO-DO: implement handling of the "protocol" option - if set to https the server should run using https
-			 */
-			protocol:'http', // setting this option to something else will not have any effect yet
-			host:'localhost',
-			port:80,
 			SocketIO:{
+				/**
+				 * TO-DO: implement handling of the "protocol" option - if set to https the server should run using https
+				 */
+				protocol:'http', // setting this option to something else will not have any effect yet
+				host:'localhost',
+				port:80,
 				logLevel:0
 			},
 //			siteBaseUrl:'localhost',
@@ -124,34 +123,17 @@ function startServer(cfgOverrides){
 	//		}
 	//	});
 		
-		var server={
-			appCfg:cfg,
-			webServer:Connect.createServer(
-//				Connect.gzip(),
-			).listen(cfg.server.port, cfg.server.host)
-		};
-		console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
-		console.log('Go to '+cfg.server.protocol+'://'+cfg.server.host+':'+cfg.server.port+'/manager/manager.html to manage and run tests');
+		var webServer=require('./webServer').createServer(cfg);
 	
-		server.io=require('socket.io').listen(server.webServer);
-		server.io.configure(function(){ // 'production'
-			server.io.set('log level', cfg.server.SocketIO.logLevel); 
-		});
-		
-//		var webServer=require('./webServer').createServer(cfg);
-		
-		var clientManager=require('./clientManager').create({server:server});
-		require('./testManager').attachTo(clientManager);
-	
-//		for(var b=0; b<cfg.browsers.length; b++)
-//			webServer.browserManager.addBrowser(extend({
-//				testsQueue:cfg.autoRunTests.slice(0)
-//			}, cfg.browsers[b]));
+		for(var b=0; b<cfg.browsers.length; b++)
+			webServer.browserManager.addBrowser(extend({
+				testsQueue:cfg.autoRunTests.slice(0)
+			}, cfg.browsers[b]));
 	
 		if(cfg.timeout)
 			setTimeout(function (){
 				console.log('timed out. testing server is shutting down');
-				process.exit(); // this will not be a good idea if loaded as a module
+				process.exit(); // this may not be a good idea if loaded as a module
 			}, cfg.timeout*1000);
 			
 		if(!cfg.interactiveMode){
