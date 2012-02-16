@@ -133,12 +133,12 @@ $(document).ready(function (){
 		if(this.innerHTML=='Connect'){
 			if('app' in b)
 				socket.json.send({
-					id:'runBrowser',
+					id:'runSlave',
 					name:b.name
 				});
 		}else
 			socket.json.send({
-				id:'disconnectBrowser',
+				id:'disconnectSlave',
 				name:b.name
 			});
 	});
