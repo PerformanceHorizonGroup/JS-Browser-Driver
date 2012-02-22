@@ -49,7 +49,7 @@ var host,
 		
 		testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
 		userLibsPath:'lib', // must be relative to the config file path
-		configFileName:__dirname+'/server.conf.json', // it's pointless to set this in a config file ;-) . can be overridden with command-line arguments
+		configFileName:__dirname+'/server.conf.json', // it's pointless to set this in a config file ;-) . shall be overridden with command-line arguments
 		
 		timeout:0 // timeout in seconds to wait before shutting down the server
 	},
@@ -70,7 +70,7 @@ function processArgv(argv){
 			processArguments.push(argv[i]);
 }
 function startServer(cfgOverrides){
-	console.log('testing server started'); //at '+__dirname);
+	console.log('testing server started');
 
 	if(cfgOverrides)
 		extend(true, cfg, cfgOverrides);

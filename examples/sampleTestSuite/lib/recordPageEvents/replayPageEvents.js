@@ -68,9 +68,19 @@
 				setTimeout(onWaitedForEvent, timeout);
 			return onWaitedForEvent;
 		},
+		/**
+		 * TO-DO: rename to expectAjaxRequestId
+		 */
 		setAjaxRequestId:function (reqId){
 			ajaxRequestIds.push(reqId);
 		},
+		/**
+		 * TO-DO: implement expectAjaxRequest (to replace setAjaxRequestId) and make it configurable so it can complete the request automatically without
+		 * a need for completeAjaxRequest. Possible parameters: (Object) resp - Response configuration object;
+		 * (Number) autoRespond - time in milliseconds to delay the response ( -1 may make it not respond );
+		 * (Object) req - the request parameters to match against;
+		 * (Boolean) once - whether to discard the entry after the first matched request or keep serving subsequent requests;
+		 */
 		completeAjaxRequest:function (cfg){
 			if(mockAjaxResponses && runningAjaxRequests[cfg.ajaxRequestId]){
 				var req=runningAjaxRequests[cfg.ajaxRequestId];
