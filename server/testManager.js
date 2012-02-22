@@ -8,6 +8,11 @@ var util = require('./lib/util'),
 	path = require("path"),
 	extend=require('./lib/other/jquery.extend');
 
+function testsMatch(t1, t2){
+	return ((!t1.module && !t2.module) || (t1.module==t2.module)) 
+			&& t1.fileName==t2.fileName 
+			&& t1.name==t2.name;
+}
 /**
  * TO-DO: rework this function to work asynchronously and adjust the code that relies on it.
  * TO-DO: move browser operations into a separate class and call methods on instances.
@@ -81,7 +86,7 @@ util.extend(TestManager.prototype, {
 				break;
 			case 'onTestDone':
 	//					console.log('done test '+msg.name);
-					for(var i=0, queue=this.browsers[client.name].testsQueue; i<queue.length; i++){
+					for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
 						if(testsMatch(queue[i], msg)){
 							queue.splice(i, 1);
 	//							console.log('removed test '+msg.name);
@@ -89,7 +94,7 @@ util.extend(TestManager.prototype, {
 						}
 					}
 					// relay this message to the managers
-					this.sendMessageToManagerClients(extend({
+					this.clientManager.sendMessageToManagerClients(extend({
 						browserName:client.name
 					}, msg));
 					break;
@@ -109,7 +114,7 @@ util.extend(TestManager.prototype, {
 				// do not break; here and move on with the code in the next case:
 			case 'onAssertion':
 					// relay this message to the managers
-					this.sendMessageToManagerClients(extend({
+					this.clientManager.sendMessageToManagerClients(extend({
 						browserName:client.name
 					}, msg));
 				break;
@@ -212,7 +217,7 @@ util.extend(TestManager.prototype, {
 				source:test.contents
 			});
 		}
-		this.sendMessageToManagerClients({
+		this.clientManager.sendMessageToManagerClients({
 			id:'testsList',
 			data:list
 		});  // update manager clients
@@ -239,13 +244,26 @@ util.extend(TestManager.prototype, {
 		return this.tests[ind];
 	},
 	/**
-	 * @method	sendMessageToManagerClients
-	 * @param	{Object} msg
+	 * @method	runTests
+	 * Run queued tests for the specified browser or for all browsers if not specified. 
+	 * @param	{Object}	(optional) browser
+	 * @param	{Array}	(optional) testsList	The tests to run. If specified will replace what is in the testsQueue
 	 */
-	sendMessageToManagerClients:function (msg){
-		for(var a in this.managerClients)
-			this.managerClients[a].socket.json.send(msg);
-	},
+	runTests:function (browser, testsList){
+		if(browser){
+			if(testsList)
+				browser.testsQueue=testsList;
+			if(browser.connected && browser.testsQueue.length && !browser.runningTest){
+				browser.runningTest=true;
+				browser.socket.json.send({
+					id:'runTests',
+					tests:browser.testsQueue
+				});
+			}
+		}else
+			for(var br in this.clientManager.slaves)
+				this.runTests(this.clientManager.slaves[br]);
+	}
 });
 
 exports.attachTo=function (clientManager){
