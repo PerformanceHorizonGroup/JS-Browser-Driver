@@ -131,7 +131,7 @@ $(document).ready(function (){
 	$('.connect-browser').live('click', function (){
 		var b=browsers[$(this).closest('div.browser-control').attr('browsername')];
 		if(this.innerHTML=='Connect'){
-			if('app' in b)
+			if(('app' in b) || ('fork' in b))
 				socket.json.send({
 					id:'runSlave',
 					name:b.name

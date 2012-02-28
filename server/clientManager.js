@@ -194,26 +194,46 @@ util.extend(mngr, {
 	 * @param	{String} slaveName
 	 */
 	runSlave:function (slaveName){
-		if((slaveName in this.slaves) && ('app' in this.slaves[slaveName])){
-			console.log('starting browser: '+slaveName+'('+this.slaves[slaveName].app+' "'+this.slaves[slaveName].args.join('" "')+'")');
-//			if(process.platform=='win32')
-//				console.log('child_process is not available in native Windows builds so nothing can be started !!!!');
-//			else
-				var proc=require('child_process').spawn(
-								this.slaves[slaveName].app, 
-								this.slaves[slaveName].args.concat([
-//													this.appCfg.server.siteBaseUrl+
+		if(slaveName in this.slaves){
+			var proc, app, slave=this.slaves[slaveName];
+			if('app' in slave){
+				app=slave.app;
+				proc=require('child_process').spawn(
+								app, 
+								slave.args.concat([
 													this.server.appCfg.server.browserDriverUrl
 													+'?socketIOServerProtocol='+this.server.appCfg.server.protocol+'&socketIOServerHost='+this.server.appCfg.server.host+'&socketIOServerPort='+this.server.appCfg.server.port
 													+'&browserName='+slaveName
 												]
 				));
 				proc.stdout.on('data', function (data) {
-				  console.log('stdout: ' + data);
+				  console.log(slaveName+', stdout: ' + data);
 				});
 				proc.stderr.on('data', function (data) {
-				  console.log('stderr: ' + data);
+				  console.log(slaveName+', stderr: ' + data);
 				});
+			}else if('fork' in slave){
+				app=slave.fork;
+				proc=require('child_process').fork(
+							app, 
+							slave.args.concat([
+												'browserName='+slaveName
+											])
+					);
+				var client={
+						socket:proc,
+						name:''
+					};
+				client.socket.json={send:client.socket.send.scope(client.socket)};
+				proc.on('message', function(msg){
+					this.handleClientMessage(client, msg);
+				}.scope(this));
+				proc.on('exit', function(m){
+					this.onDisconnectClient(slaveName);
+				}.scope(this));
+			}
+			if(proc)
+				console.log('starting slave: '+slaveName+'('+app+' "'+slave.args.join('" "')+'")');
 		}
 	},
 	/**
@@ -236,7 +256,8 @@ util.extend(mngr, {
 				data:{
 					name:slaveName,
 					connected:this.slaves[slaveName].connected,
-					app:this.slaves[slaveName].app
+					app:this.slaves[slaveName].app,
+					fork:this.slaves[slaveName].fork
 				}
 			};					
 			this.emit('beforeSendSlaveUpdateMessage', msg);
