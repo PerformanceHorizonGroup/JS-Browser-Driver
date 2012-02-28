@@ -25,9 +25,9 @@ exports.createServer=function (cfg){
 	server.use(Connect['static'](__dirname + '/../client'))
 		.use(Connect.errorHandler({ dumpExceptions: true, showStack:true }));
 
-	server.listen(cfg.server.SocketIO.port, cfg.server.SocketIO.host);
-	console.log('Server listening on port '+cfg.server.SocketIO.port+' at '+cfg.server.SocketIO.host);
-	console.log('Go to '+cfg.server.SocketIO.protocol+'://'+cfg.server.SocketIO.host+':'+cfg.server.SocketIO.port+'/manager/manager.html to manage and run tests');
+	server.listen(cfg.server.port, cfg.server.host);
+	console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
+	console.log('Go to '+cfg.server.protocol+'://'+cfg.server.host+':'+cfg.server.port+'/manager/manager.html to manage and run tests');
 
 	var io=require('socket.io').listen(server);
 	io.sockets

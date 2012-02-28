@@ -85,9 +85,9 @@ function startServer(cfgOverrides){
 		for(var i=0, arg; i<processArguments.length; i++){
 	//		console.log('arg: ' + processArguments[i]);
 			if(arg=processArguments[i].match(/^port=(\d+)/))
-				cfg.server.SocketIO.port=arg[1];
+				cfg.server.port=arg[1];
 			else if(arg=processArguments[i].match(/^host=(.*)/))
-				cfg.server.SocketIO.host=arg[1];
+				cfg.server.host=arg[1];
 			else if(arg=processArguments[i].match(/^interactiveMode=(\w+)/))
 				cfg.interactiveMode= arg[1]=='true';
 			else if(arg=processArguments[i].match(/^timeout=(\d+)/))

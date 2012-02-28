@@ -152,9 +152,9 @@ $(document).ready(function (){
 						' <a href="'
 //						+BrowserDriver.Manager.storage.appCfg.server.siteBaseUrl
 						+BrowserDriver.Manager.storage.appCfg.server.browserDriverUrl
-						+'?socketIOServerProtocol='+BrowserDriver.Manager.storage.appCfg.server.SocketIO.protocol
-						+'&socketIOServerHost='+BrowserDriver.Manager.storage.appCfg.server.SocketIO.host
-						+'&socketIOServerPort='+BrowserDriver.Manager.storage.appCfg.server.SocketIO.port
+						+'?socketIOServerProtocol='+BrowserDriver.Manager.storage.appCfg.server.protocol
+						+'&socketIOServerHost='+BrowserDriver.Manager.storage.appCfg.server.host
+						+'&socketIOServerPort='+BrowserDriver.Manager.storage.appCfg.server.port
 						+'&browserName='+name
 						+'">url</a>'
 					: '' )
