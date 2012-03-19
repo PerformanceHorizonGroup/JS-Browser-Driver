@@ -45,13 +45,6 @@ Within the conf.json config file, you need to provide an absolute link to each b
                 "args":[]
             }
 
-    - **Ubuntu**
-    
-            {
-                "name":"Chrome",
-                "app":"chromium-browser",
-                "args":[]
-            }
 
 - **Firefox**
 
@@ -74,11 +67,17 @@ Within the conf.json config file, you need to provide an absolute link to each b
                 "args":[]
             }
 
-    - **Ubuntu**
+
+- **IE**
+
+    
+    - **OS X**, what you talkin' bout Willis! Fire up your favourite VM image and follow the naitive example :-)
+        
+    - **Windows**
     
             {
-                "name":"Firefox",
-                "app":"firefox",
+                "name":"IE",
+                "app":"C:\\Program Files (x86)\\Internet Explorer\\IEXPLORE.EXE",
                 "args":[]
             }
 
