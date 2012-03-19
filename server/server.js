@@ -43,6 +43,8 @@ var host,
 //		}
 		],
 		
+		modules:[],	// a list with modules that the slaves need to load
+		
 		interactiveMode:false, // if false then load tests from "autoRunTests" and run them in all browsers starting up those specified in "autoRunBrowsers". can be overridden with command-line arguments
 		autoRunTests:[], // a list of tests to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
 		autoRunBrowsers:[], // a list of browsers to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments

@@ -30,15 +30,15 @@
 	window.BrowserDriver.Driver=new EventEmitter({
 		initialize:function (){
 			this.targetSiteFrame=$('iframe[name=targetSite]');
-			/**
-			 * @property	{Object}	adaptor	The adaptor object must have initialize() method which will be called when the driver initializes.
-			 */
-			if(this.adaptor)
-				this.adaptor.initialize();
+//			/**
+//			 * @property	{Object}	adaptor	The adaptor object must have initialize() method which will be called when the driver initializes.
+//			 */
+//			if(this.adaptor)
+//				this.adaptor.initialize();
 			this.initialized=true;
 		},
 		runNextBrowserTest:function (){
-			if(this.testsQueue.length && !this.runningTest && !this.storage.loadingLibs){
+			if(this.testsQueue.length && !this.runningTest && !this.storage.loadingLibs && !this.storage.loadingModules){
 				var t=this.testsQueue[0];
 				if(t.fileName in this.testSources){ // the SCRIPT either has been loaded or is now loading
 					console.log('running: '+t.name+' in '+t.fileName);
@@ -178,6 +178,27 @@
 			this.trigger('reset');
 		},
 		/**
+		 * @property	{Object} modules
+		 * A hash with loaded (or still loading) modules with the relative file paths as keys.
+		 */
+		modules:{},
+		initModules:function (){
+			// unload loaded modules
+			for(var l in this.modules){
+				this.modules[l].unload();
+				delete this.modules[l];
+			}
+			if(this.storage.appCfg.modules.length){
+				this.storage.loadingModules=true;
+				driverModule.require(this.storage.appCfg.modules, function (modules){
+					for(var i=0; i<modules.length; i++)
+						modules[i].initialize(driver);
+					delete driver.storage.loadingModules;
+					driver.trigger('initModules');
+				});
+			}
+		},
+		/**
 		 * @property	{Object} testSources
 		 * A hash with loaded (or still loading) test source files with the relative file paths as keys.
 		 */
@@ -245,12 +266,17 @@
 				script.onreadystatechange=function(){
 					if(script.readyState == 'complete' || script.readyState == 'loaded'){
 						script.onreadystatechange=null;
+						$(script).remove();
 						if(cb)
 							cb();
 					}
 				};
-			else if(cb)
-				$(script).one('load', cb);
+			else
+				$(script).one('load', function (){
+					$(script).remove();
+					if(cb)
+						cb()
+				});
 				
 			head.appendChild(script);
 			
@@ -327,6 +353,13 @@
 	});
 	
 	window.driver=window.BrowserDriver.Driver;
+	
+	var driverModule=registerModule({
+		url:'/browserDriver',
+		exports:{
+			driver:window.driver
+		}
+	});
 
 }(jQuery));
 
@@ -390,11 +423,16 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 						else{
 							log('captured');
 							driver.reset();
-							if('tests' in msg){
+							if('tests' in msg)
 								driver.testsQueue=msg.tests;
-								driver.runNextBrowserTest();
+							if('appCfg' in msg){
+								driver.storage.appCfg=msg.appCfg;
+								driver.initModules();
 							}
 						}
+					break;
+				case 'appCfg':
+						driver.storage.appCfg=msg.appCfg;
 					break;
 				case 'runTests':
 						driver.reset();

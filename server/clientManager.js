@@ -72,7 +72,8 @@ util.extend(mngr, {
 						this.onConnectClient(client, msg.browserName);
 						var m={
 							id:'capture',
-							result:'captured'
+							result:'captured',
+							appCfg:this.server.appCfg
 						};
 						if(this.slaves[client.name].testsQueue.length)
 							m.tests=this.slaves[client.name].testsQueue;

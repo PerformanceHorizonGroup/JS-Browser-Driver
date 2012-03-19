@@ -18,8 +18,8 @@ window.BrowserDriver.Manager={
 };
 
 $(document).ready(function (){
-	if('adaptor' in driver)
-		driver.adaptor.initialize();
+//	if('adaptor' in driver)
+//		driver.adaptor.initialize();
 	driver.bind('testRead', function (drv, testData){
 		var module=null;
 		for(var i=0; i<BrowserDriver.Manager.testModules.length; i++)
@@ -54,15 +54,25 @@ $(document).ready(function (){
 		socket.json.send({
 			id:'getBrowserUpdates'
 		});
-		socket.json.send({
-			id:'getTestsList'
-		});
 	}
 	function onMessage(msg){
 		console.log('msg '+JSON.stringify(msg));
 		switch(msg.id){
 			case 'appCfg':
 					BrowserDriver.Manager.storage.appCfg=msg.appCfg;
+					driver.storage.appCfg=msg.appCfg;
+					if(driver.storage.appCfg.modules.length){
+						driver.one('initModules', function (driver){
+							socket.json.send({
+								id:'getTestsList'
+							});
+						});
+						driver.initModules();
+					}else{
+						socket.json.send({
+							id:'getTestsList'
+						});
+					}
 				break;
 			case 'browserUpdate':
 					if(msg.data.name in browsers)

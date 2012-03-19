@@ -15,5 +15,8 @@
 		"app":"chromium-browser",
 		"args":[]
 	}],
-	"interactiveMode":true
+	"interactiveMode":true,
+	"modules":[
+		"/lib/adaptors/qunit"
+	]
 }
