@@ -188,9 +188,16 @@
 				this.modules[l].unload();
 				delete this.modules[l];
 			}
+			if(!driver.storage.driverModule) // this module for now is only used to get access to the module loading system's require() function
+				driver.storage.driverModule=registerModule({
+					url:driver.storage.appCfg.server.protocol+'://'+driver.storage.appCfg.server.host+':'+driver.storage.appCfg.server.port+'/browserDriver',
+					exports:{
+						driver:window.driver
+					}
+				});
 			if(this.storage.appCfg.modules.length){
 				this.storage.loadingModules=true;
-				driverModule.require(this.storage.appCfg.modules, function (modules){
+				this.storage.driverModule.require(this.storage.appCfg.modules, function (modules){
 					for(var i=0; i<modules.length; i++)
 						modules[i].initialize(driver);
 					delete driver.storage.loadingModules;
@@ -224,8 +231,7 @@
 
 					driver.storage.userStylesheets[src]=link;
 
-					src = 'http://'+driver.storage.urlParams.socketIOServerHost
-								+':'+driver.storage.urlParams.socketIOServerPort
+					src = driver.storage.socketIOServerLocation
 								+'/manager/tests/lib/'
 								+src+'?cb='+(new Date()).getTime();
 
@@ -293,8 +299,7 @@
 					lib+='.js';
 				if(!(lib in driver.userLibs)){
 					driver.storage.loadingLibs=true;
-					var src = 'http://'+driver.storage.urlParams.socketIOServerHost
-									+':'+driver.storage.urlParams.socketIOServerPort
+					var src = driver.storage.socketIOServerLocation
 									+'/manager/tests/lib/'
 									+lib+'?cb='+(new Date()).getTime();
 					driver.userLibs[lib]={
@@ -338,8 +343,7 @@
 	         */
 			if(driver.trigger('beforeLoadTestSource', [src])!==false)
 				driver.testSources[src]={
-					contents:driver.attachScript('http://'+driver.storage.urlParams.socketIOServerHost
-														+':'+driver.storage.urlParams.socketIOServerPort
+					contents:driver.attachScript(driver.storage.socketIOServerLocation
 														+'/manager/tests/sources/'
 														+src+'?cb='+(new Date()).getTime())
 				};
@@ -349,18 +353,21 @@
 		 * The list of scheduled tests.
 		 */
 		testsQueue:[],
-		socket:null
-	});
-	
-	window.driver=window.BrowserDriver.Driver;
-	
-	var driverModule=registerModule({
-		url:'/browserDriver',
-		exports:{
-			driver:window.driver
+		socket:null,
+		util:{
+			toAbsoluteUrl:function (url, baseUrl){
+				if(/^\w+:\/\//.test(url)) // if already absolute
+					return url;	// return it as is
+				else if(url.charAt(0)=='/') // if relative to root
+					return baseUrl.match(/^\w+:\/\/[^\/]+/)[0]+url;	//	prepend the host of the base url
+				else	// must be relative
+					return baseUrl.match(/^\w+:\/\/[^\/]+[^#\?]*\//)[0]+url;
+			}
 		}
 	});
 
+	window.driver=window.BrowserDriver.Driver;
+	
 }(jQuery));
 
 if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded in the manager app
@@ -375,6 +382,8 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 				driver.storage.urlParams[p[0]]=p[1];
 		}
 		
+		driver.storage.socketIOServerLocation=driver.storage.urlParams.socketIOServerProtocol+'://'+driver.storage.urlParams.socketIOServerHost+':'+driver.storage.urlParams.socketIOServerPort;
+	
 		driver.bind('loadLib', function (obj, lib){
 			if(!driver.storage.loadingLibs && this.testsQueue.length)
 				driver.runNextBrowserTest();

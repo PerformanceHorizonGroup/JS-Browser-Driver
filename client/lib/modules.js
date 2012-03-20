@@ -58,6 +58,9 @@
 					module.loading[i]();
 				delete module.loading;
 			}
+			/**
+			 * TO-DO: this "asyncLoading" is not a good idea!!!
+			 */
 			if(module.asyncLoading){
 				module.asyncLoading=function (){
 					delete module.asyncLoading;
@@ -70,11 +73,13 @@
 	function nextTick(cb){
 		setTimeout(cb, 10);
 	}
-	function toAbsoluteUrl(url){
-		/**
-		 * TO-DO:
-		 */
-		return url;
+	function toAbsoluteUrl(url, baseUrl){
+		if(/^\w+:\/\//.test(url)) // if already absolute
+			return url;	// return it as is
+		else if(url.charAt(0)=='/') // if relative to root
+			return baseUrl.match(/^\w+:\/\/[^\/]+/)[0]+url;	//	prepend the host of the base url
+		else	// must be relative
+			return baseUrl.match(/^\w+:\/\/[^\/]+[^#\?]*\//)[0]+url;
 	}
 	function blankModule(props){
 		var module={
@@ -88,13 +93,13 @@
 	}
 	
 	/**
-	 * Store all modules keyed by absolute url
+	 * Store all modules kyed by absolute url
 	 */
 	var modules={};
 	
 	function require(url, cb){
 		if(typeof url=='string'){
-			url=toAbsoluteUrl(url);
+			url=toAbsoluteUrl(url, this.url);
 			var module=modules[url];
 			if(module){
 				if(module.loading){
@@ -131,8 +136,9 @@
 					cb(modulesList);
 			}
 			for(var i=0, loadingList=[]; i<url.length; i++){
+				url[i]=toAbsoluteUrl(url[i], this.url);
 				loadingList.push(url[i]);
-				modulesList.push(require(url[i], checkLoadingList.createCallback(null, [url[i]], true)));
+				modulesList.push(require.call(this, url[i], checkLoadingList.createCallback(null, [url[i]], true)));
 			}
 			return modulesList;
 		}
@@ -142,6 +148,7 @@
 			fn(loadingModule);
 			return loadingModule;
 		}else{	// "object"
+			fn.url=toAbsoluteUrl(fn.url, window.location.protocol+'//'+window.location.host+window.location.pathname);
 			modules[fn.url]=blankModule(fn);
 			return modules[fn.url];
 		}

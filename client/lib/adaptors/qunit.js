@@ -4,7 +4,7 @@
 		
 module.asyncLoading=true; // tell the module loader that we're not ready yet
 // load the QUnit library
-driver.attachScript('/lib/qunit.js', function (){
+driver.attachScript(driver.util.toAbsoluteUrl('/lib/qunit.js', module.url), function (){
 	module.asyncLoading(); // tell the module loader that we're now ready
 });
 
