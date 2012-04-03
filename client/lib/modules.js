@@ -58,16 +58,7 @@
 					module.loading[i]();
 				delete module.loading;
 			}
-			/**
-			 * TO-DO: this "asyncLoading" is not a good idea!!!
-			 */
-			if(module.asyncLoading){
-				module.asyncLoading=function (){
-					delete module.asyncLoading;
-					complete();
-				}
-			}else
-				complete();
+			complete();
 		});
 	}
 	function nextTick(cb){

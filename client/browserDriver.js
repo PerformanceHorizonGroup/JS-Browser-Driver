@@ -198,10 +198,16 @@
 			if(this.storage.appCfg.modules.length){
 				this.storage.loadingModules=true;
 				this.storage.driverModule.require(this.storage.appCfg.modules, function (modules){
+					var asyncCount=1; // set to one because there is that extra call few lines below
+					function checkComplete(){
+						if(--asyncCount<1){
+							delete driver.storage.loadingModules;
+							driver.trigger('initModules');
+						}
+					}
 					for(var i=0; i<modules.length; i++)
-						modules[i].initialize(driver);
-					delete driver.storage.loadingModules;
-					driver.trigger('initModules');
+						asyncCount += modules[i].initialize(driver, checkComplete)===false; // increment the counter if the module needs to complete asyncronously
+					checkComplete();
 				});
 			}
 		},
