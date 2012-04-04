@@ -14,7 +14,7 @@
 			evt:evt,
 			time:new Date()
 		};
-		eventsList.append('<div>'+evt.type+' '+$(evt.target).getPath()+'</div>');
+		eventsList.append('<div>'+evt.type+' '+$(evt.target).getPath(true)+'</div>');
 		switch(evt.type){
 			case 'load':
 				break;
@@ -39,7 +39,7 @@
 			case 'mouseup':
 			case 'mouseover':
 			case 'mouseout':
-					e.elementPath=$(evt.target).getPath();
+					e.elementPath=$(evt.target).getPath(true);
 				break;
 		}
 		recordedEvents.push(e);
