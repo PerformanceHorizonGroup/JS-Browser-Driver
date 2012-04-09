@@ -44,6 +44,7 @@
 		}
 		recordedEvents.push(e);
 	}
+	// "beforePageInit" is only triggered by the target page if it was coded to do it 
 	driver.bind('beforePageInit', function (){
 		if(recording)
 			attachDocumentListeners();
@@ -181,7 +182,10 @@
 							'<div class="recorded-events-list"><span class="title">Recorded events</span>:<div class="items"></div></div>' +
 						'</div>')
 						.appendTo(document.body)
-						.draggable({cancel:'.record-page-event-controls>*'})
+						.draggable({cancel:'.record-page-event-controls>*', iframeFix:driver.targetSiteFrame})
+						.mouseup(function (event, ui){
+							 $('.ui-draggable-iframeFix').remove(); // do this in mouseup because the iframefix is added on mousedown and not when dragging actually starts
+						})
 						.css('position', 'absolute');
 				if(!Number(panel.css('borderTopWidth')))
 					driver.loadStylesheet('recordPageEvents/recordPageEvents.css');
@@ -297,6 +301,7 @@
 					case 'ajaxSend':
 							if(recordingOptions.mockServerSide){
 								code.splice(setAjaxRequestIdCallInd++, 0, '\tsetAjaxRequestId('+recordedEvents[i].ajaxRequestId+');');
+								code.push('\t// ajaxSend '+recordedEvents[i].ajaxRequestId);
 							}else
 								// find the response that the server returned in the events following
 								for(var e=i+1; e<recordedEvents.length; e++)

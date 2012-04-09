@@ -8,6 +8,7 @@
     background: #F8F8F8 url(c.gif) no-repeat top right;
     border: 1px solid #D7D7D7;
     box-shadow: 1px 3px 4px #888;
+    z-index:1001;
 }
 .page-url{
 	width: 250px;
