@@ -390,8 +390,8 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 		
 		driver.storage.socketIOServerLocation=driver.storage.urlParams.socketIOServerProtocol+'://'+driver.storage.urlParams.socketIOServerHost+':'+driver.storage.urlParams.socketIOServerPort;
 	
-		driver.bind('loadLib', function (obj, lib){
-			if(!driver.storage.loadingLibs && this.testsQueue.length)
+		driver.bind('loadLib initModules', function (obj, lib){
+//			if(!driver.storage.loadingLibs && this.testsQueue.length)
 				driver.runNextBrowserTest();
 		});
 		
@@ -438,11 +438,13 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 						else{
 							log('captured');
 							driver.reset();
-							if('tests' in msg)
-								driver.testsQueue=msg.tests;
 							if('appCfg' in msg){
 								driver.storage.appCfg=msg.appCfg;
 								driver.initModules();
+							}
+							if('tests' in msg){
+								driver.testsQueue=msg.tests;
+								driver.runNextBrowserTest();
 							}
 						}
 					break;

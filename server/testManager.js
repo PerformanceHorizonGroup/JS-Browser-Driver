@@ -81,9 +81,9 @@ function TestManager(cfg){
 util.extend(TestManager.prototype, {
 	onClientMessage:function (mngr, client, msg){
 		switch(msg.id){
-			case 'ready':
-					this.runTests(client);
-				break;
+//			case 'ready':
+//					this.runTests(client);
+//				break;
 			case 'onTestDone':
 	//					console.log('done test '+msg.name);
 					for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
