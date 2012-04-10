@@ -206,7 +206,7 @@
 						}
 					}
 					for(var i=0; i<modules.length; i++)
-						asyncCount += modules[i].initialize(driver, checkComplete)===false; // increment the counter if the module needs to complete asyncronously
+						modules[i].initialize(driver, checkComplete)===false && ++asyncCount; // increment the counter if the module needs to complete asyncronously
 					checkComplete();
 				});
 			}
