@@ -4,6 +4,7 @@
 	var waiting=false,
 		autoWait=0,
 		eventQueue=[],
+		eventQueueTimer=null,
 		ajaxRequestIds=[],
 		mockAjaxResponses=false,
 		runningAjaxRequests={};
@@ -18,7 +19,7 @@
 	}
 	function onWaitedForEvent(){
 		waiting=false;
-		setTimeout(processQueue, 100); // decouple event handlers
+		eventQueueTimer=setTimeout(processQueue, 100); // decouple event handlers
 	}
 	
 	var methods={
@@ -81,8 +82,8 @@
 		 * (Object) req - the request parameters to match against;
 		 * (Boolean) once - whether to discard the entry after the first matched request or keep serving subsequent requests;
 		 */
-		completeAjaxRequest:function (cfg){
-			if(mockAjaxResponses && runningAjaxRequests[cfg.ajaxRequestId]){
+		completeAjaxRequest:function (cfg){ console.log('completeAjaxRequest ['+cfg.ajaxRequestId+']'); console.log(JSON.stringify(runningAjaxRequests))
+			if(mockAjaxResponses && runningAjaxRequests[cfg.ajaxRequestId]){  console.log('completeAjaxRequest '+cfg.ajaxRequestId)
 				var req=runningAjaxRequests[cfg.ajaxRequestId];
 				delete runningAjaxRequests[cfg.ajaxRequestId];
 				req.callback(cfg.status, cfg.statusText, {text:cfg.responseText});
@@ -151,6 +152,7 @@
 			waiting=false;
 			autoWait=0;
 			eventQueue=[];
+			clearTimeout(eventQueueTimer);
 			ajaxRequestIds=[];
 			mockAjaxResponses=false;
 			runningAjaxRequests={};
@@ -160,7 +162,7 @@
 				return ajaxRequestIds.shift();
 			},
 			ajaxEventEmitter:new EventEmitter(),
-			attachDocumentListeners:function (){
+			attachDocumentListeners:function (){  //console.log('attachDocumentListeners')
 				var win=driver.targetSiteFrame.get(0).contentWindow;
 				if(!win.ajaxListenersAttached){
 					win.$(win.document)
@@ -168,11 +170,12 @@
 						.ajaxSuccess(ajaxSuccess)
 						.ajaxError(ajaxError);
 					// try to register this as the first selected transport for all types
-					win.$.ajaxTransport( "+json +text +html +*", function( options, originalOptions, jqXHR ) {
+					win.$.ajaxTransport( "+json +text +html +*", function( options, originalOptions, jqXHR ){  //console.log('ajaxTransport')
+//						debugger
 						if(mockAjaxResponses){
 							var req={
 								send:function ( headers, callback ){
-									var ajaxRequestId=driver.storage.ReplayPageEvents.ajax.getRequestId();
+									var ajaxRequestId=driver.storage.ReplayPageEvents.ajax.getRequestId();   console.log('send '+ajaxRequestId)
 									options.__ajax_request_id__ = ajaxRequestId;
 									runningAjaxRequests[ajaxRequestId]=req;
 									req.callback=callback;
