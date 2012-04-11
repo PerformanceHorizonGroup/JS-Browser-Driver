@@ -43,13 +43,13 @@
 					script.onreadystatechange=function(){
 						if(script.readyState == 'complete' || script.readyState == 'loaded'){
 							script.onreadystatechange=null;
-							$(script).remove();
+							script.parentNode.removeChild(script);
 							loadScripts();
 						}
 					};
 				else
 					script.onload=function (){ 
-						$(script).remove(); 
+						script.parentNode.removeChild(script);
 						loadScripts();
 					};
 					
