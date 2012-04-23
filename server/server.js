@@ -43,7 +43,13 @@ var host,
 //		}
 		],
 		
-		modules:[],	// a list with modules that the slaves need to load
+		slaveModules:[],	// a list with modules that the slaves need to load
+		
+		modules:{
+			'TestManager':{
+				requirePath:'./testManager'
+			}
+		},	// modules that the server needs to load
 		
 		interactiveMode:false, // if false then load tests from "autoRunTests" and run them in all browsers starting up those specified in "autoRunBrowsers". can be overridden with command-line arguments
 		autoRunTests:[], // a list of tests to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
@@ -142,8 +148,9 @@ function startServer(cfgOverrides){
 		
 //		var webServer=require('./webServer').createServer(cfg);
 		
-		var clientManager=require('./clientManager').create({server:server});
-		require('./testManager').attachTo(clientManager);
+		server.clientManager=require('./clientManager').create({server:server});
+		for(var m in cfg.modules)
+			require(cfg.modules[m].requirePath).init({server:server, cfg:cfg.modules[m], name:m});
 	
 //		for(var b=0; b<cfg.browsers.length; b++)
 //			webServer.browserManager.addBrowser(extend({

@@ -195,9 +195,9 @@
 						driver:window.driver
 					}
 				});
-			if(this.storage.appCfg.modules.length){
+			if(this.storage.appCfg.slaveModules.length){
 				this.storage.loadingModules=true;
-				this.storage.driverModule.require(this.storage.appCfg.modules, function (modules){
+				this.storage.driverModule.require(this.storage.appCfg.slaveModules, function (modules){
 					var asyncCount=1; // set to one because there is that extra call few lines below
 					function checkComplete(){
 						if(--asyncCount<1){

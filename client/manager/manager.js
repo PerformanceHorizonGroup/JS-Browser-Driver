@@ -61,7 +61,7 @@ $(document).ready(function (){
 			case 'appCfg':
 					BrowserDriver.Manager.storage.appCfg=msg.appCfg;
 					driver.storage.appCfg=msg.appCfg;
-					if(driver.storage.appCfg.modules.length){
+					if(driver.storage.appCfg.slaveModules.length){
 						driver.one('initModules', function (driver){
 							socket.json.send({
 								id:'getTestsList'

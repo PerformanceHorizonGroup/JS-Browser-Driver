@@ -269,4 +269,7 @@ util.extend(TestManager.prototype, {
 exports.attachTo=function (clientManager){
 	return new TestManager({clientManager:clientManager});
 };
+exports.init=function (cfg){
+	return this.attachTo(cfg.server.clientManager);
+};
 exports.TestManager=TestManager;

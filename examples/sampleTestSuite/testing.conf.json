@@ -16,7 +16,7 @@
 		"args":[]
 	}],
 	"interactiveMode":true,
-	"modules":[
+	"slaveModules":[
 		"/lib/adaptors/qunit"
 	]
 }
