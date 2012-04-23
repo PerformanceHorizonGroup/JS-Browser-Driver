@@ -153,14 +153,14 @@
 		 * Remove all cached data for tests, loaded user libraries and stylesheets.
 		 */
 		reset:function (){
-			for(var l in this.testSources)
-				if(this.testSources[l].contents)
-					$(this.testSources[l].contents).remove();
+//			for(var l in this.testSources)
+//				if(this.testSources[l].contents)
+//					$(this.testSources[l].contents).remove();
 			this.testSources={};
 			this.testCache.splice(0, this.testCache.length);
-			for(var l in this.userLibs)
-				if(this.userLibs[l].contents)
-					$(this.userLibs[l].contents).remove();
+//			for(var l in this.userLibs)
+//				if(this.userLibs[l].contents)
+//					$(this.userLibs[l].contents).remove();
 			this.userLibs={};
 			for(var l in this.storage.userStylesheets)
 				if(this.storage.userStylesheets[l])
@@ -339,8 +339,8 @@
 		 * @param	{String}	src	The path of the test file relative to the "testsPath" property in the test configuration file.
 		 */
 		loadTestSource:function (src){
-			if(src in driver.testSources)
-				$(driver.testSources[src].contents).remove();
+//			if(src in driver.testSources)
+//				$(driver.testSources[src].contents).remove();
 	        /**
 	         * @event beforeLoadTestSource
 	         * Fires before a SCRIPT tag is inserted into the DOM. Returning false from a handler will abort the operation.
@@ -470,7 +470,8 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 				case 'reset':
 						driver.reset();
 						/**
-						 * TO-DO: try to stop the test runner if it is progreessing with some tests. It may not be possible though as running test code can not be controlled
+						 * TO-DO: try to stop the test runner if it is progreessing with some tests. It may not be possible though 
+						 * as running test code can not be controlled without unloading the JS frame that it runs in (which is most likely the current page)
 						 */
 					break;
 			}

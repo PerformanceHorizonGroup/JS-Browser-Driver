@@ -82,8 +82,8 @@
 		 * (Object) req - the request parameters to match against;
 		 * (Boolean) once - whether to discard the entry after the first matched request or keep serving subsequent requests;
 		 */
-		completeAjaxRequest:function (cfg){ // console.log('completeAjaxRequest ['+cfg.ajaxRequestId+']'); console.log(JSON.stringify(runningAjaxRequests))
-			if(mockAjaxResponses && runningAjaxRequests[cfg.ajaxRequestId]){  // console.log('completeAjaxRequest '+cfg.ajaxRequestId)
+		completeAjaxRequest:function (cfg){  console.log('completeAjaxRequest ['+cfg.ajaxRequestId+']'); console.log(JSON.stringify(runningAjaxRequests))
+			if(mockAjaxResponses && runningAjaxRequests[cfg.ajaxRequestId]){   console.log('completeAjaxRequest '+cfg.ajaxRequestId)
 				var req=runningAjaxRequests[cfg.ajaxRequestId];
 				delete runningAjaxRequests[cfg.ajaxRequestId];
 				req.callback(cfg.status, cfg.statusText, {text:cfg.responseText});
@@ -175,7 +175,7 @@
 						if(mockAjaxResponses){
 							var req={
 								send:function ( headers, callback ){
-									var ajaxRequestId=driver.storage.ReplayPageEvents.ajax.getRequestId();   // console.log('send '+ajaxRequestId)
+									var ajaxRequestId=driver.storage.ReplayPageEvents.ajax.getRequestId();    console.log('send '+ajaxRequestId)
 									options.__ajax_request_id__ = ajaxRequestId;
 									runningAjaxRequests[ajaxRequestId]=req;
 									req.callback=callback;

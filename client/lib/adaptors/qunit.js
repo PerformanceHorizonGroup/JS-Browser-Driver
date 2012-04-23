@@ -11,9 +11,9 @@ var origTest, origAsyncTest, origModule;
 exports.initialize=function (driver, cb){
 	// load the QUnit library
 	driver.attachScript(driver.util.toAbsoluteUrl('/lib/qunit.js', module.url), function (){
-		// check if QUnit is loaded.
-		// ( it *may not* be loaded if for exampe tests are only loaded so they can be catalogued )
-		if('QUnit' in window){
+//		// check if QUnit is loaded.
+//		// ( it *may not* be loaded if for exampe tests are only loaded so they can be catalogued )
+//		if('QUnit' in window){
 			QUnit.testStart=function (data){
 				data=$.extend({
 					name:driver.runningTest.name,
@@ -44,7 +44,7 @@ exports.initialize=function (driver, cb){
 					driver.onAssertion(data);
 				}
 			};
-		}
+//		}
 		
 		// intercept QUnit's test functions
 		origTest=window.test;
