@@ -309,26 +309,26 @@
 									+'/manager/tests/lib/'
 									+lib+'?cb='+(new Date()).getTime();
 					driver.userLibs[lib]={
-						contents:driver.attachScript(src, function (){
-							delete driver.userLibs[lib].loading;
-							var loading=false;
-							for(var l in driver.userLibs)
-								if(driver.userLibs[l].loading){
-									loading=true;
-									break;
-								}
-							if(!loading)
-								delete driver.storage.loadingLibs;
-					        /**
-					         * @event loadLib
-					         * Fires after a user library's SCRIPT tag has been loaded.
-					         * @param {BrowserDriver.Driver} this
-					         * @param {String}	lib
-					         */
-							driver.trigger('loadLib', [lib]);
-						}),
 						loading:true
 					};
+					driver.attachScript(src, function (){
+						delete driver.userLibs[lib].loading;
+						var loading=false;
+						for(var l in driver.userLibs)
+							if(driver.userLibs[l].loading){
+								loading=true;
+								break;
+							}
+						if(!loading)
+							delete driver.storage.loadingLibs;
+				        /**
+				         * @event loadLib
+				         * Fires after a user library's SCRIPT tag has been loaded.
+				         * @param {BrowserDriver.Driver} this
+				         * @param {String}	lib
+				         */
+						driver.trigger('loadLib', [lib]);
+					});
 				}
 			}
 		},
@@ -339,8 +339,6 @@
 		 * @param	{String}	src	The path of the test file relative to the "testsPath" property in the test configuration file.
 		 */
 		loadTestSource:function (src){
-//			if(src in driver.testSources)
-//				$(driver.testSources[src].contents).remove();
 	        /**
 	         * @event beforeLoadTestSource
 	         * Fires before a SCRIPT tag is inserted into the DOM. Returning false from a handler will abort the operation.
@@ -348,11 +346,14 @@
 	         * @param {String}	src
 	         */
 			if(driver.trigger('beforeLoadTestSource', [src])!==false)
-				driver.testSources[src]={
-					contents:driver.attachScript(driver.storage.socketIOServerLocation
-														+'/manager/tests/sources/'
-														+src+'?cb='+(new Date()).getTime())
-				};
+				this.doLoadTestSource(src);
+		},
+		// this can be overridden
+		doLoadTestSource:function (src){
+			driver.testSources[src]={};
+			driver.attachScript(driver.storage.socketIOServerLocation
+												+'/manager/tests/sources/'
+												+src+'?cb='+(new Date()).getTime())
 		},
 		/**
 		 * @property	{Array} testsQueue
