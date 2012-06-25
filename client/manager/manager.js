@@ -83,14 +83,27 @@ $(document).ready(function (){
 					updateBrowser(msg.data.name);
 				break;
 			case 'testsList':
-					/**
-					 * TO-DO: may be better to not get the complete list of test files and eval it here
-					 * but do that on the server and only send results.
-					 */
 					BrowserDriver.Manager.testModules=[];
-					for(var i=0; i<msg.data.length; ++i){
-						if(driver.trigger('beforeLoadTestSource', [msg.data[i].name])!==false)
-							eval(msg.data[i].source);
+					for(var i=0, files=msg.data; i<files.length; ++i){ // cycle the files
+						for(var t=0; t<files[i].tests.length; t++){
+							var module=null,
+								test=files[i].tests[t];
+							test.fileName=files[i].fileName;
+							test.relFileName=files[i].relFileName;
+							for(var m=0; m<BrowserDriver.Manager.testModules.length; m++)
+								if(BrowserDriver.Manager.testModules[m].name==test.module){
+									module=BrowserDriver.Manager.testModules[m];
+									break;
+								}
+							if(!module){
+								module={
+									name:test.module,
+									tests:[]
+								};
+								BrowserDriver.Manager.testModules.push(module);
+							}		
+							module.tests.push(test);
+						}
 					}
 					$('#testsList .test-details').remove();
 					printTests(BrowserDriver.Manager.testModules, $('#testsList').empty());
@@ -135,7 +148,7 @@ $(document).ready(function (){
 		else{
 			var moduleEl = module.name ? $('<fieldset class="module"><legend>'+module.name+'</legend></fieldset>').appendTo(rootEl) : rootEl;
 			for(var i=0; i<module.tests.length; i++)
-				$('<div class="test-details" filename="'+module.tests[i].fileName+'"><input type="checkbox"> ( "<span class="test-name">'+module.tests[i].name+'</span>" ), <span class="assertions">'+module.tests[i].expect+'</span></div>').appendTo(moduleEl);
+				$('<div class="test-details" filename="'+module.tests[i].relFileName+'"><input type="checkbox"> ( "<span class="test-name">'+module.tests[i].name+'</span>" ), <span class="assertions">'+module.tests[i].expect+'</span></div>').appendTo(moduleEl);
 		}
 	}
 	$('.connect-browser').live('click', function (){

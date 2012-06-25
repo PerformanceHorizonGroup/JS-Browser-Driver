@@ -6,7 +6,8 @@
 var util = require('./lib/util'),
 	fs = require("fs"),
 	path = require("path"),
-	extend=require('./lib/other/jquery.extend');
+	extend=require('./lib/other/jquery.extend'),
+	asyncFlow=require('../client/lib/asyncFlow');;
 
 function testsMatch(t1, t2){
 	return ((!t1.module && !t2.module) || (t1.module==t2.module)) 
@@ -14,25 +15,8 @@ function testsMatch(t1, t2){
 			&& t1.name==t2.name;
 }
 /**
- * TO-DO: rework this function to work asynchronously and adjust the code that relies on it.
  * TO-DO: move browser operations into a separate class and call methods on instances.
  */
-function getFilesListFromDir(dir){
-	var files=fs.readdirSync(dir);
-	for(var i=0; i<files.length; i++){
-		files[i]=path.resolve(dir, files[i]);
-		var stat=fs.statSync(files[i]);
-		if(stat.isFile()){
-			if(path.extname(files[i]).toLowerCase()!='.js')
-				files.splice(i--, 1);
-		}else{ // is a folder (not sure if this assumption is correct
-			var f=getFilesListFromDir(files[i]);
-			files.splice.apply(files, [i, 1].concat(f));
-			i+=f.length-1; // skip over these files
-		}
-	}
-	return files;
-}
 
 //function getBrowserUpdateMsg(b){
 ////	console.dir(b)
@@ -54,13 +38,23 @@ function getFilesListFromDir(dir){
 function TestManager(cfg){
 	extend(this, {
 		/**
-		 * @property	{Array}	tests	Array of objects with details about available files with tests that can be executed.
+		 * @property	{Array}	testFiles	Array of objects with details about available files with tests that can be executed.
 		 */
-		tests:[]
+		testFiles:[]
 	}, cfg);
+	
+	if(!('clientManager' in this)){
+		this.clientManager=this.server.clientManager;
+		delete this.server;
+	}
+	
+	if(typeof this.adaptor=='string'){
+		this.adaptor=require(this.adaptor);
+		this.adaptor.initialize({});
+	}
+	
 	this.clientManager.on('message', this.onClientMessage.scope(this));
 	this.clientManager.on('beforeSendSlaveUpdateMessage', this.onBeforeSendSlaveUpdateMessage.scope(this));
-	this.reloadTests();
 	
 	var appCfg=this.clientManager.server.appCfg,
 		Connect=require('connect');
@@ -73,13 +67,18 @@ function TestManager(cfg){
 	for(var p in appCfg.server.otherUrlMappings)
 		this.clientManager.server.webServer.use(appCfg.server.otherUrlMappings[p], Connect['static'](path.resolve(path.dirname(appCfg.configFileName), p)));
 
+	this.reloadTests();
+	console.log('Go to '+appCfg.server.protocol+'://'+appCfg.server.host+':'+appCfg.server.port+'/manager/manager.html to manage and run tests');
+
 	for(var b=0, browsers=appCfg.browsers; b<browsers.length; b++)
 		this.clientManager.addSlave(extend({
 			testsQueue:appCfg.autoRunTests.slice(0)
 		}, browsers[b]));
 }
+require('util').inherits(TestManager, require('events').EventEmitter);
 util.extend(TestManager.prototype, {
 	onClientMessage:function (mngr, client, msg){
+//		console.log('msg '+msg.id);
 		switch(msg.id){
 //			case 'ready':
 //					this.runTests(client);
@@ -120,40 +119,27 @@ util.extend(TestManager.prototype, {
 				break;
 			case 'onAllTestsDone':
 					var b=this.clientManager.slaves[client.name];
-	//					b.testsQueue.shift();
 					delete b.runningTest;
-	//					this.emit('allTestsDone', b);
-	//					this.runNextBrowserTest(b);
 					this.clientManager.sendSlaveUpdateMessage(client.name);
-//					this.sendMessageToManagerClients(getBrowserUpdateMsg(b));
-	//					for(var a in this.managerClients) // update manager clients
-	////						if(b.testsQueue.length)
-	//							this.managerClients[a].socket.json.send(getBrowserUpdateMsg(b));
 				break;
-			case 'getTestData':
-					for(var i=0; i<this.tests.length; i++){
-						var test=this.getTest(i);
-						if(test.relFileName==msg.fileName){
-							client.socket.json.send({
-								id:'testData',
-								test:test
-							});
-							break;
-						}
-					}
-				break;
+//			case 'getTestData':
+//					for(var i=0; i<this.testFiles.length; i++){
+//						var test=this.getTest(i);
+//						if(test.relFileName==msg.fileName){
+//							client.socket.json.send({
+//								id:'testData',
+//								test:test
+//							});
+//							break;
+//						}
+//					}
+//				break;
 			case 'getTestsList':
-					var list=[];
-					for(var i=0; i<this.tests.length; i++){
-						var test=this.getTest(i);
-						list.push({
-							name:test.relFileName,
-							source:test.contents
+					this.getTestFiles(function (err, tests){
+						client.socket.json.send({
+							id:'testsList',
+							data:tests
 						});
-					}
-					client.socket.json.send({
-						id:'testsList',
-						data:list
 					});
 				break;
 			case 'runTests':
@@ -183,17 +169,27 @@ util.extend(TestManager.prototype, {
 			m.data.testsQueue.push(t);
 		}
 	},
-	/**
-	 * @method	loadTestsFromDirectory
-	 * @param	{String} dir	The path to load tests from.
-	 */
-	loadTestsFromDirectory:function (dir){
-		this.tests.splice.apply(this.tests, [0, this.tests.length].concat(getFilesListFromDir(dir)));  // clear the list keeping the object reference and add the new files
+	getFilesListFromDir:function (dir){
+		var files=fs.readdirSync(dir);
+		for(var i=0; i<files.length; i++){
+			files[i]=path.resolve(dir, files[i]);
+			var stat=fs.statSync(files[i]);
+			if(stat.isFile()){
+				if(path.extname(files[i]).toLowerCase()!='.js')
+					files.splice(i--, 1);
+			}else{ // is a folder (not sure if this assumption is correct
+				var f=this.getFilesListFromDir(files[i]);
+				files.splice.apply(files, [i, 1].concat(f));
+				i+=f.length-1; // skip over these files
+			}
+		}
+		return files;
 	},
 	/**
 	 * @method	reloadTests
 	 */
 	reloadTests:function (){
+		this.testFiles=true;
 		// tell all browsers to abort any running tests and reload the configuration
 		for(var br in this.clientManager.slaves){
 			var b=this.clientManager.slaves[br];
@@ -207,42 +203,74 @@ util.extend(TestManager.prototype, {
 //				this.managerClients[a].socket.json.send(getBrowserUpdateMsg(b));
 		}
 		
-		this.loadTestsFromDirectory(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath));
-
-		var list=[];
-		for(var i=0; i<this.tests.length; i++){
-			var test=this.getTest(i);
-			list.push({
-				name:test.relFileName,
-				source:test.contents
-			});
-		}
-		this.clientManager.sendMessageToManagerClients({
-			id:'testsList',
-			data:list
-		});  // update manager clients
-//		for(var a in this.managerClients) // update manager clients
-//			this.managerClients[a].socket.json.send({
+		var files=this.getFilesListFromDir(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath)),
+			list=[],
+			flow=new asyncFlow.serial({
+				data:{
+					i:0
+				}
+			}),
+			mngr=this;
+		// process all files
+		flow.run(function (next){
+			if(this.data.i < files.length){
+				var file={
+					fileName:files[this.data.i],
+					relFileName:path.relative(path.resolve(path.dirname(mngr.clientManager.server.appCfg.configFileName), mngr.clientManager.server.appCfg.testsPath), files[this.data.i]),
+					tests:[]
+				};
+				mngr.adaptor.getTestsInfoList(files[this.data.i], function (err, tests){
+					file.tests=tests;
+					list.push(file);
+					flow.repeatCurrentFn();
+				});
+				++this.data.i;
+			}else
+				next();
+		}, function (next){
+			mngr.testFiles=list;
+			mngr.emit('testsLoaded', list);
+//			mngr.clientManager.sendMessageToManagerClients({
 //				id:'testsList',
 //				data:list
-//			});
+//			});  // update manager clients
+		});
 	},
 	/**
-	 * @method	getTest
-	 * Returns the test file details for the specified index.
-	 * @param	{Number} ind	The index of the test.
-	 * @return	{Object}
+	 * @method	getTestFiles
+	 * Returns a list with all test files and details for the tests they contain.
+	 * @return	{Array}
 	 */
-	getTest:function (ind){
-		if(typeof this.tests[ind]=='string'){
-			this.tests[ind]={
-				fileName:this.tests[ind],
-				relFileName:path.relative(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath), this.tests[ind]),
-				contents:fs.readFileSync(this.tests[ind], 'utf8')
-			};
+	getTestFiles:function (cb){
+//		console.dir(this.testFiles)
+//		console.log(require('util').isArray(this.testFiles))
+		if(require('util').isArray(this.testFiles))
+			process.nextTick(cb.createCallback(this, [null, this.testFiles]));
+		else{
+			if(!this.testFiles)
+				this.reloadTests();
+			this.once('testsLoaded', function (testFiles){
+				cb(null, testFiles);
+			});
 		}
-		return this.tests[ind];
 	},
+//	/**
+//	 * @method	getTest
+//	 * Returns the test file details for the specified index.
+//	 * @param	{Number} ind	The index of the test.
+//	 * @return	{Object}
+//	 */
+//	getTest:function (ind, cb){
+//		if(typeof this.testFiles[ind]=='string'){
+//			this.testFiles[ind]={
+//				fileName:this.testFiles[ind],
+//				relFileName:path.relative(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath), this.testFiles[ind]),
+//				contents:fs.readFileSync(this.testFiles[ind], 'utf8'),
+//				tests:this.adaptor.getTestsInfoList(this.testFiles[ind])
+//			};
+//		}
+//		return this.testFiles[ind];
+//	},
 	/**
 	 * @method	runTests
 	 * Run queued tests for the specified browser or for all browsers if not specified. 
@@ -266,10 +294,7 @@ util.extend(TestManager.prototype, {
 	}
 });
 
-exports.attachTo=function (clientManager){
-	return new TestManager({clientManager:clientManager});
-};
 exports.init=function (cfg){
-	return this.attachTo(cfg.server.clientManager);
+	return new TestManager(cfg);
 };
 exports.TestManager=TestManager;

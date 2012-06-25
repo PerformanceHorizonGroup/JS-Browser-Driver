@@ -47,7 +47,8 @@ var host,
 		
 		modules:{
 			'TestManager':{
-				requirePath:'./testManager'
+				requirePath:'./testManager',
+				adaptor:'../client/lib/adaptors/qunit'
 			}
 		},	// modules that the server needs to load
 		
@@ -78,7 +79,7 @@ function processArgv(argv){
 			processArguments.push(argv[i]);
 }
 function startServer(cfgOverrides){
-	console.log('testing server started');
+	console.log('starting server');
 
 	if(cfgOverrides)
 		extend(true, cfg, cfgOverrides);
@@ -136,10 +137,10 @@ function startServer(cfgOverrides){
 			appCfg:cfg,
 			webServer:Connect.createServer(
 //				Connect.gzip(),
-			).listen(cfg.server.port, cfg.server.host)
+			).listen(cfg.server.port, cfg.server.host),
+			modules:{}
 		};
 		console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
-		console.log('Go to '+cfg.server.protocol+'://'+cfg.server.host+':'+cfg.server.port+'/manager/manager.html to manage and run tests');
 	
 		server.io=require('socket.io').listen(server.webServer);
 		server.io.configure(function(){ // 'production'
@@ -150,7 +151,7 @@ function startServer(cfgOverrides){
 		
 		server.clientManager=require('./clientManager').create({server:server});
 		for(var m in cfg.modules)
-			require(cfg.modules[m].requirePath).init({server:server, cfg:cfg.modules[m], name:m});
+			server.modules[m]=require(cfg.modules[m].requirePath).init(extend(true, {server:server, name:m}, cfg.modules[m]));
 	
 //		for(var b=0; b<cfg.browsers.length; b++)
 //			webServer.browserManager.addBrowser(extend({
@@ -175,7 +176,7 @@ function startServer(cfgOverrides){
 					for(var i=0; i<cfg.autoRunBrowsers.length; i++)
 						this.disconnectBrowser(cfg.autoRunBrowsers[i]);
 					console.log('all tests complete. shutting down');
-					process.exit(); // this may not be a good idea if loaded as a module
+					process.exit(); // this may not be a good idea if loaded as a module. might emit some event instead.
 				}
 			});
 			webServer.browserManager.on('testDone', function (msg){
