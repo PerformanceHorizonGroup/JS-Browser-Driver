@@ -20,22 +20,22 @@ window.BrowserDriver.Manager={
 $(document).ready(function (){
 //	if('adaptor' in driver)
 //		driver.adaptor.initialize();
-	driver.bind('testRead', function (drv, testData){
-		var module=null;
-		for(var i=0; i<BrowserDriver.Manager.testModules.length; i++)
-			if(BrowserDriver.Manager.testModules[i].name==testData.module){
-				module=BrowserDriver.Manager.testModules[i];
-				break;
-			}
-		if(!module){
-			module={
-				name:testData.module,
-				tests:[]
-			};
-			BrowserDriver.Manager.testModules.push(module);
-		}		
-		module.tests.push(testData);
-	});
+//	driver.bind('testRead', function (drv, testData){
+//		var module=null;
+//		for(var i=0; i<BrowserDriver.Manager.testModules.length; i++)
+//			if(BrowserDriver.Manager.testModules[i].name==testData.module){
+//				module=BrowserDriver.Manager.testModules[i];
+//				break;
+//			}
+//		if(!module){
+//			module={
+//				name:testData.module,
+//				tests:[]
+//			};
+//			BrowserDriver.Manager.testModules.push(module);
+//		}		
+//		module.tests.push(testData);
+//	});
 
 	var browsers={};
 	var socket=io.connect(null);
@@ -60,19 +60,19 @@ $(document).ready(function (){
 		switch(msg.id){
 			case 'appCfg':
 					BrowserDriver.Manager.storage.appCfg=msg.appCfg;
-					driver.storage.appCfg=msg.appCfg;
-					if(driver.storage.appCfg.slaveModules.length){
-						driver.one('initModules', function (driver){
-							socket.json.send({
-								id:'getTestsList'
-							});
-						});
-						driver.initModules();
-					}else{
+//					driver.storage.appCfg=msg.appCfg;
+//					if(driver.storage.appCfg.slaveModules.length){
+//						driver.one('initModules', function (driver){
+//							socket.json.send({
+//								id:'getTestsList'
+//							});
+//						});
+//						driver.initModules();
+//					}else{
 						socket.json.send({
 							id:'getTestsList'
 						});
-					}
+//					}
 				break;
 			case 'browserUpdate':
 					if(msg.data.name in browsers)
