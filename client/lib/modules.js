@@ -8,6 +8,14 @@
 	 * spare the global registerModule() function and give more flexibility.
 	 */
 	
+	/**
+	 * To be loaded in browsers only. Tries to implement a module loading system which will work at least very similar to
+	 * how node.js loads modules.
+	 */
+	
+//	if(!('global' in window))
+//		window.global=window;
+	
 	var loadingQueue=[],
 		loadingModule=null;
 	function attachScript(url, cb){
