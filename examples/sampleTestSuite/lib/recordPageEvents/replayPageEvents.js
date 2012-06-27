@@ -1,4 +1,5 @@
 (function (){
+	driver.loadLib('EventEmitter.js');
 	driver.loadLib("eventSimulation");
 	
 	var waiting=false,
@@ -149,6 +150,8 @@
 
 	driver.storage.ReplayPageEvents={
 		initialize:function (){
+			this.ajax.ajaxEventEmitter=new EventEmitter();
+
 			waiting=false;
 			autoWait=0;
 			eventQueue=[];
@@ -161,7 +164,7 @@
 			getRequestId:function (){
 				return ajaxRequestIds.shift();
 			},
-			ajaxEventEmitter:new EventEmitter(),
+//			ajaxEventEmitter:new EventEmitter(),
 			attachDocumentListeners:function (){  //console.log('attachDocumentListeners')
 				var win=driver.targetSiteFrame.get(0).contentWindow;
 				if(!win.ajaxListenersAttached){

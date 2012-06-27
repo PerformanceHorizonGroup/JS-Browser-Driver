@@ -27,7 +27,7 @@
 	 * which ensures the library receives proper input and test output is sent to the environment. This way the rules for
 	 * writing a test are those of the library and nothing else.
 	 */
-	window.BrowserDriver.Driver=new EventEmitter({
+	window.BrowserDriver.Driver=new Object({ //EventEmitter
 		initialize:function (){
 			this.targetSiteFrame=$('iframe[name=targetSite]');
 //			/**
@@ -142,7 +142,7 @@
 	         * @param {BrowserDriver.Driver} this
 	         * @param {Object}	testData
 	         */
-			driver.trigger('testRead', [testData]);
+			driver.emit('testRead', testData);
 			
 			// check if we are waiting for the next test to load
 			if(!driver.runningTest && driver.testsQueue.length && testsMatch(driver.testsQueue[0], testData))
@@ -175,41 +175,7 @@
 	         * Fires after the environment has been reset.
 	         * @param {BrowserDriver.Driver} this
 	         */
-			this.trigger('reset');
-		},
-		/**
-		 * @property	{Object} modules
-		 * A hash with loaded (or still loading) modules with the relative file paths as keys.
-		 */
-		modules:{},
-		initModules:function (){
-			// unload loaded modules
-			for(var l in this.modules){
-				this.modules[l].unload();
-				delete this.modules[l];
-			}
-			if(!driver.storage.driverModule) // this module for now is only used to get access to the module loading system's require() function
-				driver.storage.driverModule=registerModule({
-					url:driver.storage.appCfg.server.protocol+'://'+driver.storage.appCfg.server.host+':'+driver.storage.appCfg.server.port+'/browserDriver',
-					exports:{
-						driver:window.driver
-					}
-				});
-			if(this.storage.appCfg.slaveModules.length){
-				this.storage.loadingModules=true;
-				this.storage.driverModule.require(this.storage.appCfg.slaveModules, function (modules){
-					var asyncCount=1; // set to one because there is that extra call few lines below
-					function checkComplete(){
-						if(--asyncCount<1){
-							delete driver.storage.loadingModules;
-							driver.trigger('initModules');
-						}
-					}
-					for(var i=0; i<modules.length; i++)
-						modules[i].initialize(driver, checkComplete)===false && ++asyncCount; // increment the counter if the module needs to complete asyncronously
-					checkComplete();
-				});
-			}
+			this.emit('reset');
 		},
 		/**
 		 * @property	{Object} testSources
@@ -327,7 +293,7 @@
 				         * @param {BrowserDriver.Driver} this
 				         * @param {String}	lib
 				         */
-						driver.trigger('loadLib', [lib]);
+						driver.emit('loadLib', lib);
 					});
 				}
 			}
@@ -345,7 +311,7 @@
 	         * @param {BrowserDriver.Driver} this
 	         * @param {String}	src
 	         */
-			if(driver.trigger('beforeLoadTestSource', [src])!==false)
+			if(driver.emit('beforeLoadTestSource', src)!==false)
 				this.doLoadTestSource(src);
 		},
 		// this can be overridden
@@ -377,24 +343,20 @@
 	
 }(jQuery));
 
-if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded in the manager app
+//if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded in the manager app
 	$(document).ready(function (){
 		// get url parameters
-		driver.storage.urlParams={};
+//		driver.storage.urlParams={};
+		var urlParams={};
 		
 		var parts=window.location.search.substring(1).split('&');
 		for(var i=0; i<parts.length; i++){
 			var p=parts[i].split('=');
 			if(p.length==2)
-				driver.storage.urlParams[p[0]]=p[1];
+				urlParams[p[0]]=p[1];
 		}
 		
-		driver.storage.socketIOServerLocation=driver.storage.urlParams.socketIOServerProtocol+'://'+driver.storage.urlParams.socketIOServerHost+':'+driver.storage.urlParams.socketIOServerPort;
-	
-		driver.bind('loadLib initModules', function (obj, lib){
-//			if(!driver.storage.loadingLibs && this.testsQueue.length)
-				driver.runNextBrowserTest();
-		});
+		driver.storage.socketIOServerLocation=urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort;
 		
 		var log=function (msg){console.log(msg)};
 		function closeWindow(msg){
@@ -410,7 +372,7 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 		function startSocketIO(){
 			if('io' in window){
 				clearInterval(interval);
-				driver.socket=io.connect(driver.storage.urlParams.socketIOServerProtocol+'://'+driver.storage.urlParams.socketIOServerHost, {port:driver.storage.urlParams.socketIOServerPort, rememberTransport:false});
+				driver.socket=io.connect(urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost, {port:urlParams.socketIOServerPort, rememberTransport:false});
 				driver.socket.on('connect', onConnect);
 				driver.socket.on('message', onMessage);
 				driver.socket.on('reconnect_failed', function (){
@@ -418,8 +380,28 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 				});
 			}
 		}
-		interval=setInterval(startSocketIO, 500);
 		
+		// this module for now is only used to get access to the module loading system's require() function
+		driver.storage.driverModule=registerModule({
+			url:urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort+'/browserDriver',
+			exports:{
+				driver:window.driver
+			}
+		});
+		driver.storage.driverModule.require('./lib/driver', function (module){
+			module.create(driver, function (err, drv){
+	
+				driver=drv;
+				var cb=function (obj, lib){
+		//			if(!driver.storage.loadingLibs && this.testsQueue.length)
+						driver.runNextBrowserTest();
+				};
+				driver.on('loadLib', cb).on('initModules', cb);
+				interval=setInterval(startSocketIO, 500);
+				console.dir(driver);
+			});
+		});
+
 		/**
 		 * TO-DO: implement RMI-style messaging. that should make it easier to sequence messages
 		 */
@@ -427,7 +409,7 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 			log('sending capture message');
 			driver.socket.json.send({
 				id:'capture',
-				browserName:driver.storage.urlParams.browserName
+				browserName:urlParams.browserName
 			});
 		}
 		function onMessage(msg){

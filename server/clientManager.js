@@ -22,7 +22,7 @@ function mngr(cfg){
 	 */
 	extend(this, {
 		/**
-		 * @property	{Object}	browsers	A hash with available slaves, keyed by slave names.
+		 * @property	{Object}	slaves	A hash with available slaves, keyed by slave names.
 		 */
 		slaves:{}
 	}, cfg);

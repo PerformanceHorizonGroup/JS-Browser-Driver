@@ -7,6 +7,7 @@
 	 */
 	
 	asyncTest('Record page events', function (){
+		driver.storage.RecordPageEvents.initialize();
 		driver.storage.RecordPageEvents.getControlPanel(); // create the panel
 		driver.storage.RecordPageEvents.bind('beforeClose', function (obj){
 			ok(true);

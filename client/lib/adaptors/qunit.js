@@ -123,17 +123,17 @@ exports.initialize=function (driver, cb){
 		//			origModule.apply(window, arguments);
 			};
 			
-			driver.bind('beforeLoadTestSource', function (obj, src){
+			driver.on('beforeLoadTestSource', function (src){
 				currentModule='';
 				currentFileName=src;
 			});
 			
 			if('QUnit' in window){
-				function initQUnit(obj){
+				function initQUnit(){
 					QUnit.init();
 					QUnit.config.autorun=true;
 				}
-				driver.bind('reset', initQUnit);
+				driver.on('reset', initQUnit);
 				initQUnit();
 			}
 	
