@@ -73,7 +73,7 @@ function startServer(cfgOverrides){
 
 	if(cfgOverrides)
 		extend(true, cfg, cfgOverrides);
-	path.exists(cfg.configFileName, function (exists){
+	fs.exists(cfg.configFileName, function (exists){
 		if(exists){
 			console.log('reading configuration file '+cfg.configFileName);
 	//		JSON.parse(require('fs').readFileSync(configFileName).toString());
