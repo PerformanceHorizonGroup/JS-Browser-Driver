@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/PerformanceHorizonGroup/JS-Browser-Driver.png)](http://travis-ci.org/PerformanceHorizonGroup/JS-Browser-Driver)
 # JS Browser Driver
 The JS Browser Driver is a Node.JS project aiming to simplify writing and running automated UI tests in JS.
 
