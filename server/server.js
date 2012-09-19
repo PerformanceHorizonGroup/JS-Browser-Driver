@@ -137,15 +137,19 @@ function startServer(cfgOverrides){
 			appCfg:cfg,
 			webServer:Connect.createServer(
 //				Connect.gzip(),
-			).listen(cfg.server.port, cfg.server.host),
+			),
 			modules:{}
 		};
-		console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
-	
-		server.io=require('socket.io').listen(server.webServer);
-		server.io.configure(function(){ // 'production'
-			server.io.set('log level', cfg.server.SocketIO.logLevel); 
-		});
+		
+		(function (){
+			var s=server.webServer.listen(cfg.server.port, cfg.server.host);	// this is needed with Connect 2.x
+			console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
+		
+			server.io=require('socket.io').listen(s);
+			server.io.configure(function(){ // 'production'
+				server.io.set('log level', cfg.server.SocketIO.logLevel); 
+			});
+		}());
 		
 //		var webServer=require('./webServer').createServer(cfg);
 		
