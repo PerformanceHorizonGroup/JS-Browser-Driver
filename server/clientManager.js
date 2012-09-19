@@ -67,9 +67,9 @@ util.extend(mngr, {
 //		console.log('message '+msg.id)
 		switch(msg.id){
 			case 'capture':
-					if((msg.browserName in this.slaves) && !this.slaves[msg.browserName].connected){
+					if((msg.slaveName in this.slaves) && !this.slaves[msg.slaveName].connected){
 //						console.log('capture request from '+client.socket.id)
-						this.onConnectClient(client, msg.browserName);
+						this.onConnectClient(client, msg.slaveName);
 						var m={
 							id:'capture',
 							result:'captured',
@@ -123,18 +123,18 @@ util.extend(mngr, {
 	/**
 	 * @method	onConnectClient
 	 * @param	{Object} client
-	 * @param	{String} browserName
+	 * @param	{String} slaveName
 	 */
-	onConnectClient:function (client, browserName){
-		if(browserName in this.slaves){
-			client.name=browserName; // this is needed in webServer.js for ".on('disconnect' ..." . (not a good idea to do it like this though :-()
-			extend(this.slaves[browserName], client); //this.slaves[browserName]=
-			var b=this.slaves[browserName];
-			b.name=browserName;
+	onConnectClient:function (client, slaveName){
+		if(slaveName in this.slaves){
+			client.name=slaveName; // this is needed in webServer.js for ".on('disconnect' ..." . (not a good idea to do it like this though :-()
+			extend(this.slaves[slaveName], client); //this.slaves[slaveName]=
+			var b=this.slaves[slaveName];
+			b.name=slaveName;
 			console.log('Browser '+b.name+' connected');
 			b.connected=true;
 //			var b=extend(b, client);
-			this.emit('browserConnected', b);
+			this.emit('slaveConnected', b);
 			this.sendSlaveUpdateMessage(b.name);
 //			this.sendMessageToManagerClients(getBrowserUpdateMsg(b));
 //			for(var a in this.managerClients) // update manager clients
@@ -147,20 +147,20 @@ util.extend(mngr, {
 	},
 	/**
 	 * @method	onDisconnectClient
-	 * Cleanup after a browser has disconnected
-	 * @param	{String} browserName
+	 * Cleanup after a client has disconnected
+	 * @param	{String} slaveName
 	 */
-	onDisconnectClient:function (browserName){
-		if((browserName in this.slaves) && this.slaves[browserName].connected){
-			console.log('Browser '+browserName+' was disconnected');
-			this.emit('browserDisconnected', this.slaves[browserName]);
-			this.slaves[browserName].connected=false;
-			delete this.slaves[browserName].runningTest;
-			delete this.slaves[browserName].socket;
-			this.sendSlaveUpdateMessage(browserName);
-//			this.sendMessageToManagerClients(getBrowserUpdateMsg(this.slaves[browserName]));
+	onDisconnectClient:function (slaveName){
+		if((slaveName in this.slaves) && this.slaves[slaveName].connected){
+			console.log('Slave '+slaveName+' was disconnected');
+			this.emit('slaveDisconnected', this.slaves[slaveName]);
+			this.slaves[slaveName].connected=false;
+			delete this.slaves[slaveName].runningTest;
+			delete this.slaves[slaveName].socket;
+			this.sendSlaveUpdateMessage(slaveName);
+//			this.sendMessageToManagerClients(getBrowserUpdateMsg(this.slaves[slaveName]));
 //			for(var a in this.managerClients) // update manager clients
-//				this.managerClients[a].socket.json.send(getBrowserUpdateMsg(this.slaves[browserName]));
+//				this.managerClients[a].socket.json.send(getBrowserUpdateMsg(this.slaves[slaveName]));
 		}
 	},
 	/**
@@ -170,7 +170,7 @@ util.extend(mngr, {
 	 */
 	disconnectSlave:function (slaveName){
 		if((slaveName in this.slaves) && this.slaves[slaveName].connected){
-//			console.log('Browser '+browserName+' was disconnected');
+//			console.log('Browser '+slaveName+' was disconnected');
 			this.slaves[slaveName].socket.json.send({
 				id:'disconnect'
 			});
@@ -178,8 +178,8 @@ util.extend(mngr, {
 	},
 	/**
 	 * @method	addSlave
-	 * Add browser to the list of available slaves.
-	 * @param	{Object} browser
+	 * Add slave to the list of available slaves.
+	 * @param	{Object} slave
 	 */
 	addSlave:function (slave){
 		if(!(slave.name in this.slaves)){
@@ -215,7 +215,7 @@ util.extend(mngr, {
 								slave.args.concat([
 													this.server.appCfg.server.browserDriverUrl
 													+'?socketIOServerProtocol='+this.server.appCfg.server.protocol+'&socketIOServerHost='+this.server.appCfg.server.host+'&socketIOServerPort='+this.server.appCfg.server.port
-													+'&browserName='+slaveName
+													+'&slaveName='+slaveName
 												]
 				));
 				proc.stdout.on('data', function (data) {
@@ -229,7 +229,7 @@ util.extend(mngr, {
 				proc=require('child_process').fork(
 							app, 
 							slave.args.concat([
-												'browserName='+slaveName
+												'slaveName='+slaveName
 											])
 					);
 				var client={
@@ -250,21 +250,21 @@ util.extend(mngr, {
 	},
 	/**
 	 * @method	removeSlave
-	 * Disconnect a browser and remove it from the list of available slaves.
-	 * @param	{String} browserName
+	 * Disconnect a slave and remove it from the list of available slaves.
+	 * @param	{String} slaveName
 	 */
 	removeSlave:function (slaveName){
 		if(slaveName in this.slaves){
 			this.disconnectSlave(slaveName)
-//			if(this.slaves[browserName].connected)
-//				this.slaves[browserName].socket.close();
-			delete this.slaves[slaveName]; // this is not very clean way to remove the browser because some time after the close() method is called a 'dsconnect' will be fired 
+//			if(this.slaves[slaveName].connected)
+//				this.slaves[slaveName].socket.close();
+			delete this.slaves[slaveName]; // this is not very clean way to remove the slave because some time after the close() method is called a 'dsconnect' will be fired 
 		}
 	},
 	sendSlaveUpdateMessage:function (slaveName, managerClient){
 		if(slaveName in this.slaves){
 			var msg={
-				id:'browserUpdate',
+				id:'slaveUpdate',
 				data:{
 					name:slaveName,
 					connected:this.slaves[slaveName].connected,

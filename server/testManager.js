@@ -15,7 +15,7 @@ function testsMatch(t1, t2){
 			&& t1.name==t2.name;
 }
 /**
- * TO-DO: move browser operations into a separate class and call methods on instances.
+ * TO-DO: move slave operations into a separate class and call methods on instances.
  */
 
 //function getBrowserUpdateMsg(b){
@@ -70,10 +70,10 @@ function TestManager(cfg){
 	this.reloadTests();
 	console.log('Go to '+appCfg.server.protocol+'://'+appCfg.server.host+':'+appCfg.server.port+'/manager/manager.html to manage and run tests');
 
-	for(var b=0, browsers=appCfg.browsers; b<browsers.length; b++)
+	for(var b=0, slaves=appCfg.slaves; b<slaves.length; b++)
 		this.clientManager.addSlave(extend({
 			testsQueue:appCfg.autoRunTests.slice(0)
-		}, browsers[b]));
+		}, slaves[b]));
 }
 require('util').inherits(TestManager, require('events').EventEmitter);
 util.extend(TestManager.prototype, {
@@ -94,7 +94,7 @@ util.extend(TestManager.prototype, {
 					}
 					// relay this message to the managers
 					this.clientManager.sendMessageToManagerClients(extend({
-						browserName:client.name
+						slaveName:client.name
 					}, msg));
 					break;
 			case 'onTestStart':
@@ -106,7 +106,7 @@ util.extend(TestManager.prototype, {
 						}
 					}
 	//					var m=extend({
-	//						browserName:client.name
+	//						slaveName:client.name
 	//					}, msg);
 	//					for(var a in this.managerClients) // update manager clients
 	//						this.managerClients[a].socket.json.send(m);
@@ -114,7 +114,7 @@ util.extend(TestManager.prototype, {
 			case 'onAssertion':
 					// relay this message to the managers
 					this.clientManager.sendMessageToManagerClients(extend({
-						browserName:client.name
+						slaveName:client.name
 					}, msg));
 				break;
 			case 'onAllTestsDone':
@@ -143,11 +143,11 @@ util.extend(TestManager.prototype, {
 					});
 				break;
 			case 'runTests':
-					for(var i=0; i<msg.browsers.length; i++){
-						var b=this.clientManager.slaves[msg.browsers[i]];
-	//clientManager.slavestestsQueue=msg.tests.slice(0); // copy the queue for each browser
-						this.runTests(b, msg.tests.slice(0)); // copy the queue for each browser
-						this.clientManager.sendSlaveUpdateMessage(msg.browsers[i]);
+					for(var i=0; i<msg.slaves.length; i++){
+						var b=this.clientManager.slaves[msg.slaves[i]];
+	//clientManager.slavestestsQueue=msg.tests.slice(0); // copy the queue for each slave
+						this.runTests(b, msg.tests.slice(0)); // copy the queue for each slave
+						this.clientManager.sendSlaveUpdateMessage(msg.slaves[i]);
 //						this.sendMessageToManagerClients(getBrowserUpdateMsg(b));
 	//						for(var a in this.managerClients) // update manager clients
 	//							this.managerClients[a].socket.json.send(getBrowserUpdateMsg(b));
@@ -190,7 +190,7 @@ util.extend(TestManager.prototype, {
 	 */
 	reloadTests:function (){
 		this.testFiles=true;
-		// tell all browsers to abort any running tests and reload the configuration
+		// tell all slaves to abort any running tests and reload the configuration
 		for(var br in this.clientManager.slaves){
 			var b=this.clientManager.slaves[br];
 			delete b.runningTest;
@@ -273,19 +273,19 @@ util.extend(TestManager.prototype, {
 //	},
 	/**
 	 * @method	runTests
-	 * Run queued tests for the specified browser or for all browsers if not specified. 
-	 * @param	{Object}	(optional) browser
+	 * Run queued tests for the specified slave or for all slaves if not specified. 
+	 * @param	{Object}	(optional) slave
 	 * @param	{Array}	(optional) testsList	The tests to run. If specified will replace what is in the testsQueue
 	 */
-	runTests:function (browser, testsList){
-		if(browser){
+	runTests:function (slave, testsList){
+		if(slave){
 			if(testsList)
-				browser.testsQueue=testsList;
-			if(browser.connected && browser.testsQueue.length && !browser.runningTest){
-				browser.runningTest=true;
-				browser.socket.json.send({
+				slave.testsQueue=testsList;
+			if(slave.connected && slave.testsQueue.length && !slave.runningTest){
+				slave.runningTest=true;
+				slave.socket.json.send({
 					id:'runTests',
-					tests:browser.testsQueue
+					tests:slave.testsQueue
 				});
 			}
 		}else

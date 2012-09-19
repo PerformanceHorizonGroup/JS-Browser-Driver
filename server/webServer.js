@@ -45,7 +45,7 @@ exports.createServer=function (cfg){
 					}
 				})
 				.on('disconnect', function (){
-					browserManager.onDisconnectBrowser(client.name);
+					browserManager.onDisconnectSlave(client.name);
 				}); //.createCallback(this, [client]));
 		});
 	io.configure(function(){ // 'production'

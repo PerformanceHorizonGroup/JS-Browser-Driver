@@ -1,14 +1,14 @@
 console.log('slave running');
 var storage={
-	browserName:'[node-slave]'
+	slaveName:'[node-slave]'
 };
 for(var i=0, arg, argv=process.argv; i<argv.length; i++)
-	if(arg=argv[i].match(/^browserName=(.+)/))
-		storage.browserName=arg[1];
+	if(arg=argv[i].match(/^slaveName=(.+)/))
+		storage.slaveName=arg[1];
 setTimeout(function (){
 	process.send({
 		id:'capture',
-		browserName:storage.browserName
+		slaveName:storage.slaveName
 	});
 	setTimeout(function (){
 		process.exit(0);

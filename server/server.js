@@ -31,7 +31,7 @@ var host,
 //			    'html':"/manager/tests/html"
 			}
 		},
-		browsers:[
+		slaves:[
 //		{
 //			name:'IE',	// browser name to use
 //			app:'C:\\Program Files (x86)\\Internet Explorer\\IEXPLORE.EXE',	// command to start IE (in Windows)
@@ -52,9 +52,9 @@ var host,
 			}
 		},	// modules that the server needs to load
 		
-		interactiveMode:false, // if false then load tests from "autoRunTests" and run them in all browsers starting up those specified in "autoRunBrowsers". can be overridden with command-line arguments
+		interactiveMode:false, // if false then load tests from "autoRunTests" and run them in all slaves starting up those specified in "autoRunSlaves". can be overridden with command-line arguments
 		autoRunTests:[], // a list of tests to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
-		autoRunBrowsers:[], // a list of browsers to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
+		autoRunSlaves:[], // a list of slaves to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
 		
 		testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
 		userLibsPath:'lib', // must be relative to the config file path
@@ -113,12 +113,12 @@ function startServer(cfgOverrides){
 						fileName:arg[1]
 					});
 				}
-			}else if(arg=processArguments[i].match(/^autoRunBrowsers=(.*)/)){
+			}else if(arg=processArguments[i].match(/^autoRunSlaves=(.*)/)){
 				/**
-				 * TO-DO: support the option to run all browsers without enumerating them all
+				 * TO-DO: support the option to run all slaves without enumerating them all
 				 */
 				arg=arg[1].split(','); // format: browser1,browser2,etc
-				cfg.autoRunBrowsers=arg;
+				cfg.autoRunSlaves=arg;
 			}
 		}
 			
@@ -157,10 +157,10 @@ function startServer(cfgOverrides){
 		for(var m in cfg.modules)
 			server.modules[m]=require(cfg.modules[m].requirePath).init(extend(true, {server:server, name:m}, cfg.modules[m]));
 	
-//		for(var b=0; b<cfg.browsers.length; b++)
+//		for(var b=0; b<cfg.slaves.length; b++)
 //			webServer.browserManager.addBrowser(extend({
 //				testsQueue:cfg.autoRunTests.slice(0)
-//			}, cfg.browsers[b]));
+//			}, cfg.slaves[b]));
 	
 		if(cfg.timeout)
 			setTimeout(function (){
@@ -173,27 +173,27 @@ function startServer(cfgOverrides){
 				if(msg.id=='onTestDone'){
 					console.log('test on '+client.name+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
 				}else if(msg.id=='onAllTestsDone'){
-					for(var b in this.browsers) // check if there are tests left in any browser
-						if(this.browsers[b].testsQueue.length)
+					for(var b in this.slaves) // check if there are tests left in any slave
+						if(this.slaves[b].testsQueue.length)
 							return;
 					
-					for(var i=0; i<cfg.autoRunBrowsers.length; i++)
-						this.disconnectBrowser(cfg.autoRunBrowsers[i]);
+					for(var i=0; i<cfg.autoRunSlaves.length; i++)
+						this.disconnectSlave(cfg.autoRunSlaves[i]);
 					console.log('all tests complete. shutting down');
 					process.exit(); // this may not be a good idea if loaded as a module. might emit some event instead.
 				}
 			});
 			webServer.browserManager.on('testDone', function (msg){
-				console.log('test on '+msg.browserName+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
+				console.log('test on '+msg.slaveName+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
 			});
-			// schedule given tests for all browsers
-			for(var b=0; b<cfg.browsers.length; b++){
-				webServer.browserManager.runTests(webServer.browserManager.browsers[cfg.browsers[b].name], cfg.autoRunTests.slice(0));
+			// schedule given tests for all slaves
+			for(var b=0; b<cfg.slaves.length; b++){
+				webServer.browserManager.runTests(webServer.browserManager.slaves[cfg.slaves[b].name], cfg.autoRunTests.slice(0));
 				
-				// check if this browser must be automatically run
-				for(var i=0; i<cfg.autoRunBrowsers.length; i++)	
-					if(cfg.browsers[b].name==cfg.autoRunBrowsers[i]){
-						webServer.browserManager.runBrowser(cfg.autoRunBrowsers[i]);
+				// check if this slave must be automatically run
+				for(var i=0; i<cfg.autoRunSlaves.length; i++)	
+					if(cfg.slaves[b].name==cfg.autoRunSlaves[i]){
+						webServer.browserManager.runSlave(cfg.autoRunSlaves[i]);
 						break;
 					}
 			}

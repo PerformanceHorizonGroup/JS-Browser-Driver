@@ -37,7 +37,7 @@ $(document).ready(function (){
 //		module.tests.push(testData);
 //	});
 
-	var browsers={};
+	var slaves={};
 	var socket=io.connect(null);
 	socket.on('connect', onConnect);
 	socket.on('message', onMessage);
@@ -74,11 +74,11 @@ $(document).ready(function (){
 						});
 //					}
 				break;
-			case 'browserUpdate':
-					if(msg.data.name in browsers)
-						$.extend(browsers[msg.data.name], msg.data);
+			case 'slaveUpdate':
+					if(msg.data.name in slaves)
+						$.extend(slaves[msg.data.name], msg.data);
 					else{
-						browsers[msg.data.name]=msg.data;
+						slaves[msg.data.name]=msg.data;
 					}
 					updateBrowser(msg.data.name);
 				break;
@@ -109,8 +109,8 @@ $(document).ready(function (){
 					printTests(BrowserDriver.Manager.testModules, $('#testsList').empty());
 				break;
 			case 'onTestStart':
-					$('#console').prepend('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.browserName+'] test start: "'+msg.name+'"</div>');
-					for(var i=0, queue=browsers[msg.browserName].testsQueue; i<queue.length; i++){
+					$('#console').prepend('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test start: "'+msg.name+'"</div>');
+					for(var i=0, queue=slaves[msg.slaveName].testsQueue; i<queue.length; i++){
 						if(((!queue[i].module && !msg.module) || (queue[i].module==msg.module)) && queue[i].fileName==msg.fileName && queue[i].name==msg.name){
 							queue[i].el.addClass('running');
 							break;
@@ -118,7 +118,7 @@ $(document).ready(function (){
 					}
 				break;
 			case 'onAssertion':
-					var html='<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.browserName+'] test "'+msg.name+'"';
+					var html='<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test "'+msg.name+'"';
 					if('expected' in msg){
 						html+=', expected: '+msg.expected;
 						html+=', actual: '+msg.actual;
@@ -129,8 +129,8 @@ $(document).ready(function (){
 					$('#console').prepend($(html).addClass('done '+(msg.result?'passed':'failed')));
 				break;
 			case 'onTestDone':
-					$('#console').prepend($('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.browserName+'] test done: "'+msg.name+'", '+msg.failed+', '+msg.passed+', '+msg.total+'</div>').addClass('done '+(msg.failed?'failed':'passed')));
-					for(var i=0, queue=browsers[msg.browserName].testsQueue; i<queue.length; i++){
+					$('#console').prepend($('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test done: "'+msg.name+'", '+msg.failed+', '+msg.passed+', '+msg.total+'</div>').addClass('done '+(msg.failed?'failed':'passed')));
+					for(var i=0, queue=slaves[msg.slaveName].testsQueue; i<queue.length; i++){
 						if(((!queue[i].module && !msg.module) || (queue[i].module==msg.module)) && queue[i].fileName==msg.fileName && queue[i].name==msg.name){
 							queue[i].el.removeClass('running').addClass('done '+(msg.failed?'failed':'passed')).children('.assertions').html(msg.failed+', '+msg.passed+', '+msg.total);
 							break;
@@ -152,7 +152,7 @@ $(document).ready(function (){
 		}
 	}
 	$('.connect-browser').live('click', function (){
-		var b=browsers[$(this).closest('div.browser-control').attr('browsername')];
+		var b=slaves[$(this).closest('div.browser-control').attr('browsername')];
 		if(this.innerHTML=='Connect'){
 			if(('app' in b) || ('fork' in b))
 				socket.json.send({
@@ -166,7 +166,7 @@ $(document).ready(function (){
 			});
 	});
 	function updateBrowser(name){
-		var b=browsers[name];
+		var b=slaves[name];
 		if(!b.el)
 			b.el=$('<div browsername="'+name+'" class="browser-control"></div>').appendTo($('#browsersList'));
 		b.el.html('<input type="checkbox"> '+name
@@ -178,7 +178,7 @@ $(document).ready(function (){
 						+'?socketIOServerProtocol='+BrowserDriver.Manager.storage.appCfg.server.protocol
 						+'&socketIOServerHost='+BrowserDriver.Manager.storage.appCfg.server.host
 						+'&socketIOServerPort='+BrowserDriver.Manager.storage.appCfg.server.port
-						+'&browserName='+name
+						+'&slaveName='+name
 						+'">url</a>'
 					: '' )
 				);
@@ -188,9 +188,9 @@ $(document).ready(function (){
 	
 	$('#runSelected').click(function (){
 		var tests=[],
-			browsers=[];
+			slaves=[];
 		$('.browser-control :checked').each(function (){
-			browsers.push($(this).closest('.browser-control').attr('browsername'));
+			slaves.push($(this).closest('.browser-control').attr('browsername'));
 		});
 		$('.test-details :checked').each(function (){
 			tests.push({
@@ -203,7 +203,7 @@ $(document).ready(function (){
 		socket.json.send({
 			id:'runTests',
 			tests:tests,
-			browsers:browsers
+			slaves:slaves
 		});
 	});
 	$('#reloadTests').click(function (){

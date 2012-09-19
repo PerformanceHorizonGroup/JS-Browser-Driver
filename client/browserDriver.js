@@ -409,7 +409,7 @@
 			log('sending capture message');
 			driver.socket.json.send({
 				id:'capture',
-				browserName:urlParams.browserName
+				slaveName:urlParams.slaveName
 			});
 		}
 		function onMessage(msg){
