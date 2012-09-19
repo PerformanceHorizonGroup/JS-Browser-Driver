@@ -196,9 +196,20 @@ util.extend(mngr, {
 	 */
 	runSlave:function (slaveName){
 		if(slaveName in this.slaves){
-			var proc, app, slave=this.slaves[slaveName];
+			var proc, app, slave=this.slaves[slaveName], cfg=this.server.appCfg;
+			function processParams(appStr){
+				return appStr.replace(/%([^%]+)%/g, function (match, p1, offset, string){
+					/**
+					 * TO-DO: get this object somewhere in higher scope so it can be accessed and modfied by other code
+					 */
+					return {
+						SERVER_ROOT:__dirname,
+						CLIENT_ROOT:path.resolve(__dirname, '../client')
+					}[p1];
+				});
+			}
 			if('app' in slave){
-				app=slave.app;
+				app=processParams(slave.app);
 				proc=require('child_process').spawn(
 								app, 
 								slave.args.concat([
@@ -214,7 +225,7 @@ util.extend(mngr, {
 				  console.log(slaveName+', stderr: ' + data);
 				});
 			}else if('fork' in slave){
-				app=slave.fork;
+				app=processParams(slave.fork);
 				proc=require('child_process').fork(
 							app, 
 							slave.args.concat([
