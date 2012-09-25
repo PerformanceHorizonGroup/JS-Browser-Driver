@@ -131,7 +131,7 @@ util.extend(mngr, {
 			extend(this.slaves[slaveName], client); //this.slaves[slaveName]=
 			var b=this.slaves[slaveName];
 			b.name=slaveName;
-			console.log('Browser '+b.name+' connected');
+			console.log('Slave '+b.name+' connected');
 			b.connected=true;
 //			var b=extend(b, client);
 			this.emit('slaveConnected', b);

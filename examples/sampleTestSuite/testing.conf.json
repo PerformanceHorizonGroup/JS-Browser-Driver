@@ -21,6 +21,7 @@
 	}],
 	"interactiveMode":true,
 	"slaveModules":[
+		"/modules/testManager",
 		"/lib/adaptors/qunit"
 	]
 }

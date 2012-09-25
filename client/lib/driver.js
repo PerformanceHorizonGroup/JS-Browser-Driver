@@ -79,19 +79,11 @@ registerModule(function (module, require){
 									this.storage.appCfg=msg.appCfg;
 									this.initModules();
 								}
-								if('tests' in msg){
-									this.testsQueue=msg.tests;
-									this.runNextBrowserTest();
-								}
+								this.emit('capture', msg);
 							}
 						break;
 					case 'appCfg':
 							this.storage.appCfg=msg.appCfg;
-						break;
-					case 'runTests':
-							this.reset();
-							this.testsQueue=msg.tests;
-							this.runNextBrowserTest();
 						break;
 					case 'disconnect':
 							this.emit('disconnect');
@@ -104,6 +96,7 @@ registerModule(function (module, require){
 							 */
 						break;
 				}
+				this.emit('message', msg);
 			},
 			reset:function (){
 				
