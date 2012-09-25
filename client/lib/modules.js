@@ -1,5 +1,5 @@
-(function (){
-	
+(function (globalScope){
+
 	/**
 	 * * Modules (scripts) can be loaded a little easier and maybe faster if they are retrieved via AJAX calls
 	 * because that gives a lot more details for the download. But AJAX limits us to the same domain and cross-domain
@@ -9,12 +9,10 @@
 	 */
 	
 	/**
-	 * To be loaded in browsers only. Tries to implement a module loading system which will work at least very similar to
-	 * how node.js loads modules.
+	 * Tries to implement a module loading system which will work at least very similar to
+	 * how node.js loads modules and also be compatible with node's require().
 	 */
 	
-//	if(!('global' in window))
-//		window.global=window;
 	
 	var loadingQueue=[],
 		loadingModule=null;
@@ -84,7 +82,9 @@
 		var module={
 			exports:{}
 		};
-		module.require=require.scope(module);
+		module.require=function (){
+			return require.apply(module, arguments);
+		};
 		
 		$.extend(true, module, props);
 		
@@ -96,60 +96,86 @@
 	 */
 	var modules={};
 	
-	function require(url, cb){
-		if(typeof url=='string'){
-			url=toAbsoluteUrl(url, this.url);
-			var module=modules[url];
-			if(module){
-				if(module.loading){
-					module.loading.push(cb.createCallback(null, [module.exports]));
+	function require(url, cb){ 
+		if('filename' in this){	// node modules have "filename"
+			// this must be node.js so use what it provides (all modules load synchronously)
+			if(typeof url=='string'){
+				var exports=this.require(url);
+				if(cb)
+					nextTick(function (){
+						cb(exports);
+					});
+				return exports;
+			}else{	// an array
+				for(var i=0, exportsList=[]; i<url.length; i++)
+					exportsList.push(this.require(url[i]));
+				if(cb)
+					nextTick(function (){
+						cb(exportsList);
+					});
+			}
+			
+		}else{
+			if(typeof url=='string'){
+				url=toAbsoluteUrl(url, this.url);
+				var module=modules[url];
+				if(module){
+					if(module.loading){
+						module.loading.push(cb.createCallback(null, [module.exports]));
+					}else{
+						if(cb)
+							nextTick(function (){
+								cb(module.exports);
+							});
+					}
 				}else{
-					if(cb)
-						nextTick(function (){
-							cb(module.exports);
-						});
+					module=modules[url]=blankModule({
+						url:url,
+						
+						/**
+						 * delete this property when the module loads. Callbacks can be added
+						 * to this array and will be called when it loads.
+						 */
+						loading:[]
+					});
+					module.loading.push(function (){
+						cb(module.exports);
+					});
+					loadModule(module);
 				}
-			}else{
-				module=modules[url]=blankModule({
-					url:url,
-					
-					/**
-					 * delete this property when the module loads. Callbacks can be added
-					 * to this array and will be called when it loads.
-					 */
-					loading:[]
-				});
-				module.loading.push(function (){
-					cb(module.exports);
-				});
-				loadModule(module);
+				return module.exports;
+			}else{ // an array
+				var modulesList=[];
+				function checkLoadingList(moduleExp, url){
+					var ind=$.inArray(url, loadingList);
+					if(ind>-1)
+						loadingList.splice(ind, 1);
+					if(loadingList.length==0)
+						cb(modulesList);
+				}
+				for(var i=0, loadingList=[]; i<url.length; i++){
+					url[i]=toAbsoluteUrl(url[i], this.url);
+					loadingList.push(url[i]);
+					modulesList.push(require.call(this, url[i], checkLoadingList.createCallback(null, [url[i]], true)));
+				}
+				return modulesList;
 			}
-			return module.exports;
-		}else{ // an array
-			var modulesList=[];
-			function checkLoadingList(moduleExp, url){
-				var ind=$.inArray(url, loadingList);
-				if(ind>-1)
-					loadingList.splice(ind, 1);
-				if(loadingList.length==0)
-					cb(modulesList);
-			}
-			for(var i=0, loadingList=[]; i<url.length; i++){
-				url[i]=toAbsoluteUrl(url[i], this.url);
-				loadingList.push(url[i]);
-				modulesList.push(require.call(this, url[i], checkLoadingList.createCallback(null, [url[i]], true)));
-			}
-			return modulesList;
 		}
 	}
-	window.registerModule=function (fn){
-		if(typeof fn=='function'){
-			fn(loadingModule);
-			return loadingModule;
-		}else{	// "object"
-			fn.url=toAbsoluteUrl(fn.url, window.location.protocol+'//'+window.location.host+window.location.pathname);
-			modules[fn.url]=blankModule(fn);
-			return modules[fn.url];
+	globalScope.registerModule=function (fn, module){
+		if(module){	// this must be node.js
+			fn(module, function (){
+				return require.apply(module, arguments);
+			});
+		}else{
+			if(typeof fn=='function'){
+				fn(loadingModule, loadingModule.require);	// loadingModule must reference the currently loading module
+				return loadingModule;
+			}else{	// "object"
+				fn.url=toAbsoluteUrl(fn.url, window.location.protocol+'//'+window.location.host+window.location.pathname);
+				modules[fn.url]=blankModule(fn);
+				return modules[fn.url];
+			}
 		}
 	};
-}());
+}( (function() {return this;}.call()) )); // use this construct to access the global object

@@ -1,8 +1,7 @@
-// if registerModule is defined then we must be in the browser so call that. if not then this has
+// if registerModule is defined call that. if not then this has
 // been loaded as a node.js module and the code can execute right away.
-(typeof registerModule=='function' ? registerModule : function (fn){fn(module);}).call(this, function (module){
-	var exports=module.exports,
-		require=module.require;
+(typeof registerModule=='function' ? registerModule : function (fn){fn(module, require);}).call(this, function (module, require){
+	var exports=module.exports;
 		
 /**
  * This code intercepts calls to the QUnit testing library to allow tests written for that library to run in BrowserDriver.
@@ -171,5 +170,5 @@ exports.getTestsInfoList=function (requirePath, cb){
 	}
 };
 
-});
+}, typeof module=='object'?module:null);
 
