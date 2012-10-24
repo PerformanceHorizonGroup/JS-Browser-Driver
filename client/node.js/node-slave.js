@@ -18,7 +18,7 @@ driver.on('disconnect', function (){
 
 for(var i=0, arg, argv=process.argv; i<argv.length; i++)
 	if(arg=argv[i].match(/^slaveName=(.+)/))
-		driver.storage.slaveName=arg[1];
+		driver.storage.slaveName=arg[i];
 
 driver.connect();
 
