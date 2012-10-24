@@ -148,7 +148,7 @@ $(document).ready(function (){
 		else{
 			var moduleEl = module.name ? $('<fieldset class="module"><legend>'+module.name+'</legend></fieldset>').appendTo(rootEl) : rootEl;
 			for(var i=0; i<module.tests.length; i++)
-				$('<div class="test-details" filename="'+module.tests[i].relFileName+'"><input type="checkbox"> ( "<span class="test-name">'+module.tests[i].name+'</span>" ), <span class="assertions">'+module.tests[i].expect+'</span></div>').appendTo(moduleEl);
+				$('<div class="test-details" filename="'+module.tests[i].fileName+'"><input type="checkbox"> ( "<span class="test-name">'+module.tests[i].name+'</span>" ), <span class="assertions">'+module.tests[i].expect+'</span></div>').appendTo(moduleEl);
 		}
 	}
 	$('.connect-browser').live('click', function (){
