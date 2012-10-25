@@ -33,6 +33,16 @@ function mngr(cfg){
 	 */
 	this.managerClients={};
 	
+	var appCfg=this.server.appCfg,
+		Connect=require('connect');
+	this.server.webServer
+		.use(Connect['static'](__dirname + '/../client')) // better use %CLIENT_ROOT%
+		.use(Connect.errorHandler({ dumpExceptions: true, showStack:true }));
+	if(appCfg.userLibsPath)
+		this.server.webServer.use(appCfg.server.userLibsUrl, Connect['static'](path.resolve(path.dirname(appCfg.configFileName), appCfg.userLibsPath)));
+	for(var p in appCfg.server.otherUrlMappings)
+		this.server.webServer.use(appCfg.server.otherUrlMappings[p], Connect['static'](path.resolve(path.dirname(appCfg.configFileName), p)));
+
 	var clientManager=this;
 	this.server.io.sockets
 		.on('connection', function (socket){
