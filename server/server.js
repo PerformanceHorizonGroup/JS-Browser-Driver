@@ -138,7 +138,17 @@ function startServer(cfgOverrides){
 			webServer:Connect.createServer(
 //				Connect.gzip(),
 			),
-			modules:{}
+			modules:{},
+			params:{
+				SERVER_ROOT:__dirname,
+				CLIENT_ROOT:path.resolve(__dirname, '../client')
+			},
+			processParamString:function (appStr){
+				return appStr.replace(/%([^%]+)%/g, function (match, p1, offset, string){
+					return server.params[p1];
+				});
+			}
+			
 		};
 		
 		(function (){
