@@ -6,8 +6,10 @@ var EventEmitter=require('events').EventEmitter,
 	driver=require('../lib/driver').create({
 		socket:socket
 	});
-socket.send=function (msg){
-	process.send(msg);
+socket.json={
+	send:function (msg){
+		process.send(msg);
+	}
 };
 process.on('message', function (msg){
 	socket.emit('message', msg);
