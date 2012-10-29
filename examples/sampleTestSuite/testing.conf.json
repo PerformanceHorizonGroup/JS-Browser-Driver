@@ -20,8 +20,8 @@
 		"args":[]
 	}],
 	"interactiveMode":true,
-	"slaveModules":[
-		"/modules/testManager",
-		"/lib/adaptors/qunit"
-	]
+	"slaveModules":[{
+		"fileName":"/modules/testManager",
+		"adaptor":"/lib/adaptors/qunit"
+	}]
 }
