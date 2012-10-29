@@ -23,8 +23,8 @@
 //
 // The code was then altered to look like this:
 
-driver.loadLib("util");
-driver.loadLib("recordPageEvents/replayPageEvents");
+//driver.loadLib("util");
+//driver.loadLib("recordPageEvents/replayPageEvents");
 asyncTest("Accordion widget", 12, function (){
 	var test=this;
 

@@ -1,5 +1,5 @@
-driver.loadLib("recordPageEvents/replayPageEvents");
-driver.loadLib("util");
+//driver.loadLib("recordPageEvents/replayPageEvents");
+//driver.loadLib("util");
 asyncTest("AJAX Tabs", 30, function (){
 	var test=this;
 

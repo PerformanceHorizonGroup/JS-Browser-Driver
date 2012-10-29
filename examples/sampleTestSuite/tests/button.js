@@ -1,6 +1,6 @@
 
-driver.loadLib("util");
-driver.loadLib("recordPageEvents/replayPageEvents");
+//driver.loadLib("util");
+//driver.loadLib("recordPageEvents/replayPageEvents");
 asyncTest("Button widget", 37, function (){
 	var test=this;
 

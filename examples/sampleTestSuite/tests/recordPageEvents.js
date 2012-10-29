@@ -1,5 +1,5 @@
 (function (){
-	driver.loadLib('recordPageEvents/recordPageEvents');
+//	driver.loadLib('recordPageEvents/recordPageEvents');
 	
 	module('Record page events');
 	/**

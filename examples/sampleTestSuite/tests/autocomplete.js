@@ -28,8 +28,8 @@
 //	});
 //});
 
-driver.loadLib("util");
-driver.loadLib("recordPageEvents/replayPageEvents");
+//driver.loadLib("util");
+//driver.loadLib("recordPageEvents/replayPageEvents");
 asyncTest("Autocomplete", 32, function (){
 	var test=this;
 
