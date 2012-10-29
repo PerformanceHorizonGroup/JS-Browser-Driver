@@ -77,24 +77,28 @@ util.extend(mngr, {
 //		console.log('message '+msg.id)
 		switch(msg.id){
 			case 'capture':
+					var m={
+						id:'capture'
+					};
 					if((msg.slaveName in this.slaves) && !this.slaves[msg.slaveName].connected){
 //						console.log('capture request from '+client.socket.id)
 						this.onConnectClient(client, msg.slaveName);
-						var m={
-							id:'capture',
-							result:'captured',
-							appCfg:this.server.appCfg
-						};
-						if(this.slaves[client.name].testsQueue.length)
-							m.tests=this.slaves[client.name].testsQueue;
+						m.result='captured';
+						m.appCfg=this.server.appCfg;
+//						if(this.slaves[client.name].testsQueue.length)
+//							m.tests=this.slaves[client.name].testsQueue;
 //						console.dir(m)
-						client.socket.json.send(m);
-					}else{
-						client.socket.json.send({
-							id:'capture',
-							result:'rejected'
-						});
-					}
+					}else
+						m.result='rejected';
+//				    /**
+//				     * @event beforeSendCaptureMessage
+//				     * Fires when a message has been received.
+//				     * @param {BrowserManager} this
+//				     * @param {Object}	client
+//				     * @param {Object}	msg
+//				     */
+//					this.emit('beforeSendCaptureMessage', this, client, msg, m);
+					client.socket.json.send(m);
 				break;
 			case 'registerManagerClient':
 					this.managerClients[client.socket.id]=client;
