@@ -22,8 +22,8 @@
 //				serverUrl+'/lib/EventEmitter.js',
 				serverUrl+'/lib/helpers.js',
 //				serverUrl+'/lib/qunit.js',
-				serverUrl+'/lib/modules.js',
-				serverUrl+'/browserDriver.js'
+				serverUrl+'/lib/modules.js'
+//				serverUrl+'/browserDriver.js'
 //				serverUrl+'/adaptors/qunit.js'
 			];
 		
@@ -55,7 +55,23 @@
 					
 				head.appendChild(script);
 			}else
-				driver.initialize();
+				registerModule.loadFromAbsPath(urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort+'/lib/driver', function (exports){
+					exports.create({
+						socket:function (driver){
+							var socket=io.connect(urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost, {port:urlParams.socketIOServerPort, rememberTransport:false});
+							socket.on('connect', function (){
+								driver.connect();
+							});
+							return socket;
+						}
+					}, function (err, driver){
+						$.extend(driver.storage, {
+							slaveName:urlParams.slaveName,
+							socketIOServerLocation:urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort
+						});
+					});
+				}); // location.protocol+'//'+location.host+location.pathname.replace(/[^\/]*$/, '')
+//				driver.initialize();
 
 		}())
 		var lnk=document.createElement('LINK');
@@ -72,7 +88,7 @@
 		margin:0px;
 		height:100%;
 	}
-	#targetSite{
+	#targetSite, iframe.testing-instance{
 		border:0px;
 		width:100%;
 		height:100%;
@@ -80,6 +96,6 @@
 </style>
 </head>
 <body>
-<iframe name="targetSite" id="targetSite"></iframe>
+<!--iframe name="targetSite" id="targetSite"></iframe-->
 </body>
 </html>
