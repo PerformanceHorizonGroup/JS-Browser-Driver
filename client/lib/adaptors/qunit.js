@@ -23,7 +23,7 @@ exports.initialize=function (){
 	function processSourceFilesQueue(){
 		if(!processingSourceFile && sourceFilesQueue.length){
 			processingSourceFile=true;
-			currentModule='';
+			currentModule=undefined;
 			function fileProcessed(){
 				processingSourceFile=false;
 				var file=sourceFilesQueue.shift();
@@ -67,7 +67,7 @@ exports.initialize=function (){
 		processSourceFilesQueue();
 	}
 	
-	var currentModule='',
+	var currentModule=undefined,
 		testCache={};
 //		currentFileName='';
 	function addToTestCache(test){
@@ -89,14 +89,9 @@ exports.initialize=function (){
 			runningTest.run();
 		}
 	}
-	function onRunningTestDone(){
-		runningTest=null;
-		processTestsQueue();
-	}
 	
 	function Test(cfg){
 		extend(this, cfg);
-		this.testEnvironment={};
 	}
 	function onTestRead(test){
 //		console.log('testRead', test.name, 'in', test.fileName)
@@ -108,26 +103,36 @@ exports.initialize=function (){
 //		console.log('runningTest', runningTest, runningTest&&(runningTest.module==test.module))
 		if(runningTest && runningTest.paused 
 						&& runningTest.fileName==test.fileName 
-						&& (!(runningTest.module&&test.module) || (runningTest.module==test.module)) 
+						&& (!(runningTest.module&&test.module) || (runningTest.module.name==test.module.name)) 
 						&& runningTest.name==test.name){
 //			console.log('resuming test ...');
 			extend(runningTest, test);
 			runningTest.resume();
 		}
 	}
+	function Module(){
+		this.initialize.apply(this, arguments);
+	}
 
 	function setup(QUnit){
 		extend(Test.prototype, {
 			run:function (){
 				if(!this.paused){
-					if(this.fn)
+					if(this.fn){
+						this.reset();
+						if(this.module && (typeof this.module.setup=='function'))
+							this.module.setup.call(this.testEnvironment);
 						this.fn.call(this.environment);
-					else{
+					}else{
 						this.pause();
 						console.log('waiting for test function ...');
 						loadTestsSource(this);
 					}
 				}
+			},
+			end:function (){
+				if(this.module && (typeof this.module.teardown=='function'))
+					this.module.teardown.call(this.testEnvironment);
 			},
 			pause:function (){
 				this.paused=true;
@@ -135,6 +140,18 @@ exports.initialize=function (){
 			resume:function (){
 				this.paused=false;
 				this.run();
+			},
+			reset:function (){
+				this.testEnvironment={
+					__testInst:this
+				};
+			}
+		});
+		extend(Module.prototype, {
+			initialize:function (name, lifecycle){
+				this.name=name;
+				if(lifecycle)
+					extend(this, lifecycle);
 			}
 		});
 
@@ -142,25 +159,28 @@ exports.initialize=function (){
 			sendMessage(extend({
 				id:'testStart',
 				name:runningTest.name,
-				module:runningTest.module,
+				module:runningTest.module?runningTest.module.name:'',
 				fileName:runningTest.fileName
 			}, data));
 		});
 		QUnit.testDone(function (data){
-			sendMessage(extend({
+			runningTest.end();
+			var msg=extend({
 				id:'testDone',
 				name:runningTest.name,
-				module:runningTest.module,
+				module:runningTest.module?runningTest.module.name:'',
 				fileName:runningTest.fileName
-			}, data));
-			onRunningTestDone();
+			}, data);
+			runningTest=null;
+			sendMessage(msg);
+			processTestsQueue();
 		});
 		QUnit.log(function (data){
 			if(runningTest){
 				sendMessage(extend({
 					id:'assertion',
 					name:runningTest.name,
-					module:runningTest.module,
+					module:runningTest.module?runningTest.module.name:'',
 					fileName:runningTest.fileName
 				}, data));
 			}
@@ -188,7 +208,10 @@ exports.initialize=function (){
 					fileName:sourceFilesQueue[0].fileName, //currentFileName, 
 					name:testName, 
 					fn:function (){
-						QUnit.module(mod); 
+						if(mod)
+							QUnit.module(mod.name);
+						else
+							QUnit.module('');
 						QUnit.test.apply(QUnit, args);
 					},
 					expect:expected
@@ -212,21 +235,18 @@ exports.initialize=function (){
 					fileName:sourceFilesQueue[0].fileName, //currentFileName, 
 					name:testName, 
 					fn:function (){
-						QUnit.module(mod); 
+						if(mod)
+							QUnit.module(mod.name);
+						else
+							QUnit.module('');
 						QUnit.asyncTest.apply(QUnit, args);
 					},
 					expect:expected
 				};
 				onTestRead(test);
 			},			
-			/**
-			 * TO-DO: add handling of module lifecycle configuration
-			 */
 			module:function (name, lifecycle){
-				currentModule=name;
-				if(lifecycle)
-					driver
-		//			QUnit.module.apply(window, arguments);
+				currentModule=new Module(name, lifecycle);
 			}
 		});
 	}
@@ -264,6 +284,7 @@ exports.initialize=function (){
 			//QUnit.config.blocking=false;
 			QUnit.init();
 			QUnit.config.autorun=true;
+			QUnit.config.semaphore=0;
 			
 			setup(QUnit);
 			sendMessage({
@@ -392,7 +413,7 @@ exports.getTestsInfoList=function (requirePath, cb){
 			inst.onMessage(function sourceComplete(msg){
 				if(msg.id=='testRead'){
 					currentTestsList.push({
-						module:msg.test.module,
+						module:msg.test.module?msg.test.module.name:'',
 						fileName:msg.test.fileName,
 						name:msg.test.name,
 						expect:msg.test.expect
@@ -425,7 +446,7 @@ exports.getTestsInfoList=function (requirePath, cb){
 			inst.onMessage(function (msg){
 				if(msg.id=='testRead'){
 					currentTestsList.push({
-						module:msg.test.module,
+						module:msg.test.module?msg.test.module.name:'',
 						fileName:msg.test.fileName,
 						name:msg.test.name,
 						expect:msg.test.expect
