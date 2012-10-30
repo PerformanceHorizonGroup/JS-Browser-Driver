@@ -69,6 +69,11 @@
 							slaveName:urlParams.slaveName,
 							socketIOServerLocation:urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort
 						});
+						driver.on('disconnect', function (){
+							driver.socket.disconnect();
+							console.log('closing window')
+							window.close();
+						});
 					});
 				}); // location.protocol+'//'+location.host+location.pathname.replace(/[^\/]*$/, '')
 //				driver.initialize();
