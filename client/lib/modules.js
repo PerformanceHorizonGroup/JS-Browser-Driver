@@ -6,6 +6,7 @@
 	 * calls are probably better to have.
 	 * * Also retrieving the script as text (via AJAX) allows the code to be executed in a specific environment which may
 	 * spare the global registerModule() function and give more flexibility.
+	 * * a way to remove any trace (like jQuery's noConflict()) could be useful
 	 */
 	
 	/**
@@ -96,6 +97,34 @@
 	 */
 	var modules={};
 	
+	function requireModuleAtAbsUrl(url, cb){
+		var module=modules[url];
+		if(module){
+			if(module.loading){
+				module.loading.push(cb.createCallback(null, [module.exports]));
+			}else{
+				if(cb)
+					nextTick(function (){
+						cb(module.exports);
+					});
+			}
+		}else{
+			module=modules[url]=blankModule({
+				url:url,
+				
+				/**
+				 * delete this property when the module loads. Callbacks can be added
+				 * to this array and will be called when it loads.
+				 */
+				loading:[]
+			});
+			module.loading.push(function (){
+				cb&&cb(module.exports);
+			});
+			loadModule(module);
+		}
+		return module.exports;
+	}
 	function require(url, cb){ 
 		if('filename' in this){	// node modules have "filename"
 			// this must be node.js so use what it provides (all modules load synchronously)
@@ -118,47 +147,22 @@
 		}else{
 			if(typeof url=='string'){
 				url=toAbsoluteUrl(url, this.url);
-				var module=modules[url];
-				if(module){
-					if(module.loading){
-						module.loading.push(cb.createCallback(null, [module.exports]));
-					}else{
-						if(cb)
-							nextTick(function (){
-								cb(module.exports);
-							});
-					}
-				}else{
-					module=modules[url]=blankModule({
-						url:url,
-						
-						/**
-						 * delete this property when the module loads. Callbacks can be added
-						 * to this array and will be called when it loads.
-						 */
-						loading:[]
-					});
-					module.loading.push(function (){
-						cb(module.exports);
-					});
-					loadModule(module);
-				}
-				return module.exports;
+				return requireModuleAtAbsUrl(url, cb);
 			}else{ // an array
-				var modulesList=[];
+				var exportsList=[];
 				function checkLoadingList(moduleExp, url){
 					var ind=$.inArray(url, loadingList);
 					if(ind>-1)
 						loadingList.splice(ind, 1);
 					if(loadingList.length==0)
-						cb(modulesList);
+						cb(exportsList);
 				}
 				for(var i=0, loadingList=[]; i<url.length; i++){
 					url[i]=toAbsoluteUrl(url[i], this.url);
 					loadingList.push(url[i]);
-					modulesList.push(require.call(this, url[i], checkLoadingList.createCallback(null, [url[i]], true)));
+					exportsList.push(require.call(this, url[i], checkLoadingList.createCallback(null, [url[i]], true)));
 				}
-				return modulesList;
+				return exportsList;
 			}
 		}
 	}
@@ -177,5 +181,8 @@
 				return modules[fn.url];
 			}
 		}
+	};
+	globalScope.registerModule.loadFromAbsPath=function (path, cb){
+		return requireModuleAtAbsUrl(path, cb);
 	};
 }( (function() {return this;}.call()) )); // use this construct to access the global object
