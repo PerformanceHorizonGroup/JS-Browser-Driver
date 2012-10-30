@@ -108,7 +108,7 @@ $(document).ready(function (){
 					$('#testsList .test-details').remove();
 					printTests(BrowserDriver.Manager.testModules, $('#testsList').empty());
 				break;
-			case 'onTestStart':
+			case 'testManager.onTestStart':
 					$('#console').prepend('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test start: "'+msg.name+'"</div>');
 					for(var i=0, queue=slaves[msg.slaveName].testsQueue; i<queue.length; i++){
 						if(((!queue[i].module && !msg.module) || (queue[i].module==msg.module)) && queue[i].fileName==msg.fileName && queue[i].name==msg.name){
@@ -117,7 +117,7 @@ $(document).ready(function (){
 						}
 					}
 				break;
-			case 'onAssertion':
+			case 'testManager.onAssertion':
 					var html='<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test "'+msg.name+'"';
 					if('expected' in msg){
 						html+=', expected: '+msg.expected;
@@ -128,7 +128,7 @@ $(document).ready(function (){
 					html+='</div>';
 					$('#console').prepend($(html).addClass('done '+(msg.result?'passed':'failed')));
 				break;
-			case 'onTestDone':
+			case 'testManager.onTestDone':
 					$('#console').prepend($('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test done: "'+msg.name+'", '+msg.failed+', '+msg.passed+', '+msg.total+'</div>').addClass('done '+(msg.failed?'failed':'passed')));
 					for(var i=0, queue=slaves[msg.slaveName].testsQueue; i<queue.length; i++){
 						if(((!queue[i].module && !msg.module) || (queue[i].module==msg.module)) && queue[i].fileName==msg.fileName && queue[i].name==msg.name){

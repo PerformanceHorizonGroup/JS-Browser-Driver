@@ -7,7 +7,7 @@ var util = require('./lib/util'),
 	fs = require("fs"),
 	path = require("path"),
 	extend=require('./lib/other/jquery.extend'),
-	asyncFlow=require('../client/lib/asyncFlow');;
+	asyncFlow=require('../client/lib/asyncFlow');
 
 function testsMatch(t1, t2){
 	return ((!t1.module && !t2.module) || (t1.module==t2.module)) 
@@ -36,7 +36,11 @@ function testsMatch(t1, t2){
 //}
 
 function TestManager(cfg){
-	extend(this, {
+	this.storage={
+		info:{}
+	};
+	
+	extend(true, this, {
 		/**
 		 * @property	{Array}	testFiles	Array of objects with details about available files with tests that can be executed.
 		 */
@@ -50,22 +54,22 @@ function TestManager(cfg){
 	
 	if(typeof this.adaptor=='string'){
 		this.adaptor=require(this.adaptor);
-		this.adaptor.initialize({});
+//		this.adaptor.initialize({});
 	}
 	
 	this.clientManager.on('message', this.onClientMessage.scope(this));
+//	this.clientManager.on('beforeSendCaptureMessage', function (mngr, client, requestMsg, responseMsg){
+//		if(responseMsg.result=='captured')
+//			responseMsg.testManagerInfo=this.storage.info;
+//	}.scope(this));
 	this.clientManager.on('beforeSendSlaveUpdateMessage', this.onBeforeSendSlaveUpdateMessage.scope(this));
 	
 	var appCfg=this.clientManager.server.appCfg,
 		Connect=require('connect');
+	this.storage.info.testsBaseDir=path.resolve(path.dirname(appCfg.configFileName), appCfg.testsPath);
+	this.storage.info.testsBaseUrl=appCfg.server.testsUrl;
 	this.clientManager.server.webServer
-		.use(appCfg.server.testsUrl, Connect['static'](path.resolve(path.dirname(appCfg.configFileName), appCfg.testsPath)))
-		.use(Connect['static'](__dirname + '/../client'))
-		.use(Connect.errorHandler({ dumpExceptions: true, showStack:true }));;
-	if(appCfg.userLibsPath)
-		this.clientManager.server.webServer.use(appCfg.server.userLibsUrl, Connect['static'](path.resolve(path.dirname(appCfg.configFileName), appCfg.userLibsPath)));
-	for(var p in appCfg.server.otherUrlMappings)
-		this.clientManager.server.webServer.use(appCfg.server.otherUrlMappings[p], Connect['static'](path.resolve(path.dirname(appCfg.configFileName), p)));
+		.use(appCfg.server.testsUrl, Connect['static'](this.storage.info.testsBaseDir));
 
 	this.reloadTests();
 	console.log('Go to '+appCfg.server.protocol+'://'+appCfg.server.host+':'+appCfg.server.port+'/manager/manager.html to manage and run tests');
@@ -80,10 +84,17 @@ util.extend(TestManager.prototype, {
 	onClientMessage:function (mngr, client, msg){
 //		console.log('msg '+msg.id);
 		switch(msg.id){
-//			case 'ready':
-//					this.runTests(client);
-//				break;
-			case 'onTestDone':
+			case 'testManager.clientInitialized':
+					var respMsg={
+						id:'testManager.reset',
+						testManagerInfo:this.storage.info
+					};
+					var queue=this.clientManager.slaves[client.name].testsQueue;
+					if(queue.length)
+						respMsg.tests=queue;
+					client.socket.json.send(respMsg);
+					break;
+			case 'testManager.onTestDone':
 	//					console.log('done test '+msg.name);
 					for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
 						if(testsMatch(queue[i], msg)){
@@ -97,7 +108,7 @@ util.extend(TestManager.prototype, {
 						slaveName:client.name
 					}, msg));
 					break;
-			case 'onTestStart':
+			case 'testManager.onTestStart':
 					for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
 						if(testsMatch(queue[i], msg)){
 							this.clientManager.slaves[client.name].runningTest=queue[i];
@@ -111,13 +122,13 @@ util.extend(TestManager.prototype, {
 	//					for(var a in this.managerClients) // update manager clients
 	//						this.managerClients[a].socket.json.send(m);
 				// do not break; here and move on with the code in the next case:
-			case 'onAssertion':
+			case 'testManager.onAssertion':
 					// relay this message to the managers
 					this.clientManager.sendMessageToManagerClients(extend({
 						slaveName:client.name
 					}, msg));
 				break;
-			case 'onAllTestsDone':
+			case 'testManager.onAllTestsDone':
 					var b=this.clientManager.slaves[client.name];
 					delete b.runningTest;
 					this.clientManager.sendSlaveUpdateMessage(client.name);
@@ -189,7 +200,7 @@ util.extend(TestManager.prototype, {
 	 * @method	reloadTests
 	 */
 	reloadTests:function (){
-		this.testFiles=true;
+		this.testFile=true;
 		// tell all slaves to abort any running tests and reload the configuration
 		for(var br in this.clientManager.slaves){
 			var b=this.clientManager.slaves[br];
@@ -204,37 +215,49 @@ util.extend(TestManager.prototype, {
 		}
 		
 		var files=this.getFilesListFromDir(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath)),
-			list=[],
-			flow=new asyncFlow.serial({
-				data:{
-					i:0
-				}
-			}),
-			mngr=this;
-		// process all files
-		flow.run(function (next){
-			if(this.data.i < files.length){
-				var file={
-					fileName:files[this.data.i],
-					relFileName:path.relative(path.resolve(path.dirname(mngr.clientManager.server.appCfg.configFileName), mngr.clientManager.server.appCfg.testsPath), files[this.data.i]),
-					tests:[]
-				};
-				mngr.adaptor.getTestsInfoList(files[this.data.i], function (err, tests){
-					file.tests=tests;
-					list.push(file);
-					flow.repeatCurrentFn();
+			list=[];
+//			flow=new asyncFlow.serial({
+//				data:{
+//					i:0
+//				}
+//			}),
+//			mngr=this;
+//		// process all files
+//		flow.run(function (next){
+//			if(this.data.i < files.length){
+//				var file={
+//					fileName:files[this.data.i],
+//					relFileName:path.relative(path.resolve(path.dirname(mngr.clientManager.server.appCfg.configFileName), mngr.clientManager.server.appCfg.testsPath), files[this.data.i]),
+//					tests:[]
+//				};
+//				mngr.adaptor.getTestsInfoList(files[this.data.i], function (err, tests){
+//					file.tests=tests;
+//					list.push(file);
+//					flow.repeatCurrentFn();
+//				});
+//				++this.data.i;
+//			}else
+//				next();
+//		}, function (next){
+//			mngr.testFiles=list;
+//			mngr.emit('testsLoaded', list);
+////			mngr.clientManager.sendMessageToManagerClients({
+////				id:'testsList',
+////				data:list
+////			});  // update manager clients
+//		});
+		
+		this.adaptor.getTestsInfoList(files, function (err, tests){
+			for(var i=0; i<tests.length; i++)
+				list.push({
+					fileName:tests[i].fileName,
+					relFileName:path.relative(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath), tests[i].fileName),
+					tests:tests[i].tests
 				});
-				++this.data.i;
-			}else
-				next();
-		}, function (next){
-			mngr.testFiles=list;
-			mngr.emit('testsLoaded', list);
-//			mngr.clientManager.sendMessageToManagerClients({
-//				id:'testsList',
-//				data:list
-//			});  // update manager clients
-		});
+			this.testFiles=list;
+			this.emit('testsLoaded', list);
+		}.scope(this));
+		
 	},
 	/**
 	 * @method	getTestFiles
@@ -284,7 +307,7 @@ util.extend(TestManager.prototype, {
 			if(slave.connected && slave.testsQueue.length && !slave.runningTest){
 				slave.runningTest=true;
 				slave.socket.json.send({
-					id:'runTests',
+					id:'testManager.runTests',
 					tests:slave.testsQueue
 				});
 			}
