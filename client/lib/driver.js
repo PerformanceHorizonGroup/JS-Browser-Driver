@@ -19,11 +19,13 @@ registerModule(function (module, require){
 			initialize:function (){
 				if(!this.storage)
 					this.storage={};
+				if(typeof this.socket=='function')
+					this.socket=this.socket(this);
 				this.socket.on('message', this.processMsg.scope(this));
 			},
 			connect:function (){
 	//			console.log('sending capture message for '+this.storage.slaveName);
-				this.socket.send({
+				this.socket.json.send({
 					id:'capture',
 					slaveName:this.storage.slaveName
 				});
@@ -42,16 +44,17 @@ registerModule(function (module, require){
 				if(this.storage.appCfg.slaveModules.length){
 					this.storage.loadingModules=true;
 					var paths=[],
+						configs=[],
 						driver=this;
-					if('filename' in module)	// this is node.js
-						for(var i=0; i<this.storage.appCfg.slaveModules.length; i++){
-//							var path=this.storage.appCfg.slaveModules[i];
-//							if(path.indexOf('/')==0)
-//								path='..'+path;
-							paths.push('..'+this.storage.appCfg.slaveModules[i]);
-						}
-					else
-						paths=this.storage.appCfg.slaveModules;
+					for(var i=0; i<this.storage.appCfg.slaveModules.length; i++){
+						var fileName=this.storage.appCfg.slaveModules[i].fileName;
+						if('filename' in module)	// this is node.js
+							fileName='..'+fileName; 
+						paths.push(fileName);
+						configs.push(extend({
+							driver:driver
+						}, this.storage.appCfg.slaveModules[i]));						
+					}
 					require(paths, function (modules){
 						var asyncCount=1; // set to one because there is that extra call few lines below
 						function checkComplete(){
@@ -61,25 +64,25 @@ registerModule(function (module, require){
 								}
 							};
 						for(var i=0; i<modules.length; i++)
-							modules[i].initialize(driver, checkComplete)===false && ++asyncCount; // increment the counter if the module needs to complete asyncronously
+							modules[i].initialize(configs[i], checkComplete)===false && ++asyncCount; // increment the counter if the module needs to complete asyncronously
 						checkComplete();
 					});
 				}
 			},
 			processMsg:function (msg){
-	//			console.log(msg.id);
+//				console.dir(msg);
 				switch(msg.id){
 					case 'capture':
 							if(msg.result=='rejected'){
 								this.emit('disconnect');
 							}else{
-	//							console.log('captured');
+//								console.log('captured');
 								this.reset();
 								if('appCfg' in msg){
 									this.storage.appCfg=msg.appCfg;
 									this.initModules();
 								}
-								this.emit('capture', msg);
+//								this.emit('capture', msg);
 							}
 						break;
 					case 'appCfg':
@@ -132,7 +135,8 @@ registerModule(function (module, require){
 			cfg={};
 		}
 		var returnDriver=function (){
-			cb(null, new exports.Driver(cfg));
+			var driver=new exports.Driver(cfg); // create the driver
+			cb&&cb(null, driver); // and return it if needed
 		};
 		if(initializationCbs)
 			initializationCbs.push(returnDriver);
