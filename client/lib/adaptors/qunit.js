@@ -117,18 +117,25 @@ exports.initialize=function (){
 	function setup(QUnit){
 		extend(Test.prototype, {
 			run:function (){
-				if(!this.paused){
+				if(!this.paused && !this.setupCount){
 					if(this.fn){
 						this.reset();
-						if(this.module && (typeof this.module.setup=='function'))
+						if(this.module && (typeof this.module.setup=='function')){
+							this.setupCount++;
 							this.module.setup.call(this.testEnvironment);
-						this.fn.call(this.environment);
+							this.setupCount--;
+						}
+						this.doRun();
 					}else{
 						this.pause();
 						console.log('waiting for test function ...');
 						loadTestsSource(this);
 					}
 				}
+			},
+			doRun:function (){
+				if(!this.setupCount)
+					this.fn.call(this.environment);
 			},
 			end:function (){
 				if(this.module && (typeof this.module.teardown=='function'))
@@ -142,9 +149,19 @@ exports.initialize=function (){
 				this.run();
 			},
 			reset:function (){
+				this.setupCount=0;
 				this.testEnvironment={
 					__testInst:this
 				};
+			},
+			require:function (src, cb){
+				this.setupCount++;
+				var test=this;
+				require(src, function (exports){
+					cb&&cb(exports);
+					test.setupCount--;
+					test.doRun();
+				});
 			}
 		});
 		extend(Module.prototype, {
