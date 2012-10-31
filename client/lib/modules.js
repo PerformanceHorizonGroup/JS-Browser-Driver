@@ -101,7 +101,9 @@
 		var module=modules[url];
 		if(module){
 			if(module.loading){
-				module.loading.push(cb.createCallback(null, [module.exports]));
+				module.loading.push(function (){
+					cb(module.exports);
+				});
 			}else{
 				if(cb)
 					nextTick(function (){
@@ -160,7 +162,12 @@
 				for(var i=0, loadingList=[]; i<url.length; i++){
 					url[i]=toAbsoluteUrl(url[i], this.url);
 					loadingList.push(url[i]);
-					exportsList.push(require.call(this, url[i], checkLoadingList.createCallback(null, [url[i]], true)));
+					(function (){
+						var u=url[i];
+						exportsList.push(require.call(this, u, function (exports){
+							checkLoadingList(exports, u);
+						}));
+					}());
 				}
 				return exportsList;
 			}
