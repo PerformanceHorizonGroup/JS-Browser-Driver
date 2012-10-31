@@ -1,7 +1,8 @@
-/**
- * Some utility functions to use when accessing the IFRAME
- */
-window.testUtils={
+(typeof registerModule=='function' ? registerModule : function (fn){fn(module, require);}).call(this, function (module, require){
+//	var exports=module.exports;
+		
+
+module.exports={
 	setPath:function (pathName, cb){
 		driver.targetSiteFrame.attr('src', pathName);
 		driver.targetSiteFrame.one('load', function (){
@@ -22,3 +23,6 @@ window.testUtils={
 		return (driver.targetSiteFrame.get(0).contentWindow.$ || $)(selector, driver.targetSiteFrame.get(0).contentWindow.document);
 	}
 };
+
+
+}, typeof module=='object'?module:null);
