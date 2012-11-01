@@ -66,10 +66,13 @@ function TestManager(cfg){
 	
 	var appCfg=this.clientManager.server.appCfg,
 		Connect=require('connect');
-	this.storage.info.testsBaseDir=path.resolve(path.dirname(appCfg.configFileName), appCfg.testsPath);
-	this.storage.info.testsBaseUrl=appCfg.server.testsUrl;
+	this.storage.info.testsBaseDir=path.resolve(path.dirname(appCfg.configFileName), this.testsPath);
+	this.storage.info.testsBaseUrl=this.testsUrl;
+	this.storage.info.userLibsDir=path.resolve(path.dirname(appCfg.configFileName), this.userLibsPath);
+	this.storage.info.userLibsUrl=this.userLibsUrl;
 	this.clientManager.server.webServer
-		.use(appCfg.server.testsUrl, Connect['static'](this.storage.info.testsBaseDir));
+		.use(this.testsUrl, Connect['static'](this.storage.info.testsBaseDir))
+		.use(this.userLibsUrl, Connect['static'](this.storage.info.userLibsDir));
 
 	this.reloadTests();
 	console.log('Go to '+appCfg.server.protocol+'://'+appCfg.server.host+':'+appCfg.server.port+'/manager/manager.html to manage and run tests');
@@ -214,7 +217,7 @@ util.extend(TestManager.prototype, {
 //				this.managerClients[a].socket.json.send(getBrowserUpdateMsg(b));
 		}
 		
-		var files=this.getFilesListFromDir(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath)),
+		var files=this.getFilesListFromDir(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.testsPath)),
 			list=[];
 //			flow=new asyncFlow.serial({
 //				data:{
@@ -251,7 +254,7 @@ util.extend(TestManager.prototype, {
 			for(var i=0; i<tests.length; i++)
 				list.push({
 					fileName:tests[i].fileName,
-					relFileName:path.relative(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.clientManager.server.appCfg.testsPath), tests[i].fileName),
+					relFileName:path.relative(path.resolve(path.dirname(this.clientManager.server.appCfg.configFileName), this.testsPath), tests[i].fileName),
 					tests:tests[i].tests
 				});
 			this.testFiles=list;

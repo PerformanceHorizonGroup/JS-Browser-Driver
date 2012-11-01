@@ -1,6 +1,6 @@
 registerModule(function (module, require){
 	var exports=module.exports;
-		
+	
 	var initializationCbs=null,
 		nextTick=null,
 		extend=null,
@@ -167,7 +167,7 @@ registerModule(function (module, require){
 				return script;
 			},
 			processMsg:function (msg){
-				console.log(msg.id);
+//				console.log(msg.id);
 				switch(msg.id){
 					case 'testManager.runTests':
 							this.reset();
@@ -189,10 +189,19 @@ registerModule(function (module, require){
 				}
 			},
 			processTestInstanceMsg:function (msg){
-				console.log('testInstanceMsg '+msg.id);
+//				console.log('testInstanceMsg '+msg.id);
 				switch(msg.id){
 					case 'adaptorInitialized':
 							this.testInstance.initialized=true;
+							var cfg=extend(true, {
+								
+							}, this.storage.info);
+							if(!isNodeJS)
+								cfg.serverUrl=this.driver.storage.socketIOServerLocation;
+							this.testInstance.sendMessage({
+								id:'testCfg',
+								cfg:cfg
+							});
 							this.checkTestsQueue();
 						break;
 					case 'testStart':

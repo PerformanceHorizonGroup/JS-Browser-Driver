@@ -11,7 +11,7 @@ var isNodeJS = !(typeof window=='object');
 
 exports.initialize=function (){
 	
-	var extend, sendMessage, onMessage;
+	var extend, sendMessage, onMessage, testCfg={};
 	
 	var sourceFilesQueue=[]
 		processingSourceFile=false;
@@ -154,6 +154,9 @@ exports.initialize=function (){
 					__testInst:this
 				};
 			},
+			requireLib:function (src, cb){
+				return this.require((isNodeJS ? testCfg.userLibsDir+require('path').sep : testCfg.serverUrl+testCfg.userLibsUrl+'/')+src, cb);
+			},
 			require:function (src, cb){
 				this.setupCount++;
 				var test=this;
@@ -207,6 +210,7 @@ exports.initialize=function (){
 		extend(function() {return this;}.call(), QUnit.assert, {
 			start:QUnit.start,
 			stop:QUnit.stop,
+			expect:QUnit.expect,
 			test:function (testName, expected, callback){
 //				console.log('test')
 				var mod=currentModule,
@@ -307,13 +311,6 @@ exports.initialize=function (){
 			sendMessage({
 				id:'adaptorInitialized'
 			});
-			
-//			function initQUnit(){
-//				QUnit.init();
-//				QUnit.config.autorun=true;
-//			}
-//			driver.on('reset', initQUnit);
-//			initQUnit();
 		});
 	}
 	onMessage(function (msg){
@@ -328,6 +325,9 @@ exports.initialize=function (){
 					else
 						testsQueue.push(msg.test);
 					processTestsQueue();
+				break;
+			case 'testCfg':
+					extend(testCfg, msg.cfg);
 				break;
 		}
 	});
@@ -484,7 +484,6 @@ exports.getTestsInfoList=function (requirePath, cb){
 		/**
 		 * not needed for now
 		 */
-//		driverObj.doLoadTestSource(requirePath);
 	}
 };
 
