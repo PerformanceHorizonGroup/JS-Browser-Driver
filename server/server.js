@@ -20,8 +20,6 @@ var host,
 			},
 //			siteBaseUrl:'localhost',
 			browserDriverUrl:'localhost/BrowserDriver.html',
-			testsUrl:'/manager/tests/sources', // where to map "testsPath". this value is hard-coded in BrowserDriver.Driver !!!
-			userLibsUrl:'/manager/tests/lib', // where to map "userLibsPath". this value is hard-coded in BrowserDriver.Driver !!!
 			/**
 			 * TO-DO: may be useful to be able to expand file system paths with special keys 
 			 * so that "{server}" for example gets replaced with the folder where the server has been started
@@ -48,7 +46,11 @@ var host,
 		modules:{
 			'TestManager':{
 				requirePath:'./testManager',
-				adaptor:'../client/lib/adaptors/qunit'
+				adaptor:'../client/lib/adaptors/qunit',
+				testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
+				userLibsPath:'lib', // must be relative to the config file path
+				testsUrl:'/manager/tests/sources',
+				userLibsUrl:'/manager/tests/lib'
 			}
 		},	// modules that the server needs to load
 		
@@ -56,8 +58,6 @@ var host,
 		autoRunTests:[], // a list of tests to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
 		autoRunSlaves:[], // a list of slaves to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
 		
-		testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
-		userLibsPath:'lib', // must be relative to the config file path
 		configFileName:__dirname+'/server.conf.json', // it's pointless to set this in a config file ;-) . shall be overridden with command-line arguments
 		
 		timeout:0 // timeout in seconds to wait before shutting down the server
@@ -160,8 +160,6 @@ function startServer(cfgOverrides){
 				server.io.set('log level', cfg.server.SocketIO.logLevel); 
 			});
 		}());
-		
-//		var webServer=require('./webServer').createServer(cfg);
 		
 		server.clientManager=require('./clientManager').create({server:server});
 		for(var m in cfg.modules)
