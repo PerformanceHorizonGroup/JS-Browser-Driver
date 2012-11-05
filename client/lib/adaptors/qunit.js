@@ -3,7 +3,8 @@
 (typeof registerModule=='function' ? registerModule : function (fn){fn(module, require);}).call(this, function (module, require){
 	var exports=module.exports;
 		
-var isNodeJS = !(typeof window=='object');
+var isNodeJS = !(typeof window=='object'),
+	globalScope=function() {return this;}.call();
 
 /**
  * This code intercepts calls to the QUnit testing library to allow tests written for that library to run in BrowserDriver.
@@ -12,6 +13,46 @@ var isNodeJS = !(typeof window=='object');
 exports.initialize=function (){
 	
 	var extend, sendMessage, onMessage, testCfg={};
+	
+	globalScope.__adaptor__={
+		storage:{},
+		requireLib:function (src, cb){
+			return require((isNodeJS ? testCfg.userLibsDir+require('path').sep : testCfg.serverUrl+testCfg.userLibsUrl+'/')+src, cb);
+		},
+		require:function (src, cb){
+			return require(src, cb);
+		},
+		attachScript:attachScript,
+		loadStylesheet:function (src, cb, doc){
+			if(!doc)
+				doc=document;
+			var link=doc.createElement('link'),
+				head=doc.getElementsByTagName('head')[0];
+
+//			src = driver.storage.socketIOServerLocation
+//						+'/manager/tests/lib/'
+//						+src+'?cb='+(new Date()).getTime();
+
+			link.href=src;
+			link.rel='stylesheet';
+			link.type='text/css';
+			
+			if($.browser.msie) // no load event in IE so wait for readyState
+				link.onreadystatechange=function(){
+					if(link.readyState == 'complete' || link.readyState == 'loaded'){
+						link.onreadystatechange=null;
+						if(cb)
+							cb();
+					}
+				};
+			else if(cb)
+				$(link).one('load', cb);
+				
+			head.appendChild(link);
+			
+			return link;
+		}
+	};
 	
 	var sourceFilesQueue=[]
 		processingSourceFile=false;
@@ -160,7 +201,7 @@ exports.initialize=function (){
 			require:function (src, cb){
 				this.setupCount++;
 				var test=this;
-				require(src, function (exports){
+				return require(src, function (exports){
 					cb&&cb(exports);
 					test.setupCount--;
 					test.doRun();
@@ -207,7 +248,7 @@ exports.initialize=function (){
 		});
 
 		// add the test methods to global 
-		extend(function() {return this;}.call(), QUnit.assert, {
+		extend(globalScope, QUnit.assert, {
 			start:QUnit.start,
 			stop:QUnit.stop,
 			expect:QUnit.expect,
@@ -287,11 +328,11 @@ exports.initialize=function (){
 		});
 	}else{
 		sendMessage=function (msg){
-			window.__adaptorSendMessage(msg);
+			window.__adaptor__.sendMessage(msg);
 		};
 		(function (){
 			var listeners=[];
-			window.__adaptorOnMessage=function (msg){
+			window.__adaptor__.onMessage=function (msg){
 				for(var i=0; i<listeners.length; i++)
 					listeners[i](msg);
 			};
@@ -382,10 +423,6 @@ exports.createTestingInstance=function (cfg){
 		inst.el.className='testing-instance';
 		document.body.appendChild(inst.el);
 //		$(inst.el).bind('load', function (){
-			inst.el.contentWindow.__adaptorSendMessage=function (msg){
-				for(var i=0; i<inst.listeners.length; i++)
-					inst.listeners[i](msg);
-			};
 			/**
 			 * TO-DO: try to use asyncFlow instead of nesting callbacks
 			 */
@@ -394,6 +431,10 @@ exports.createTestingInstance=function (cfg){
 					attachScript(cfg.serverUrl+'/lib/modules.js', function (){
 							inst.el.contentWindow.registerModule.loadFromAbsPath(cfg.serverUrl+'/lib/adaptors/qunit', function (exports){
 								exports.initialize();
+								inst.el.contentWindow.__adaptor__.sendMessage=function (msg){
+									for(var i=0; i<inst.listeners.length; i++)
+										inst.listeners[i](msg);
+								};
 							});
 						}, doc);
 				}, doc);
@@ -402,7 +443,7 @@ exports.createTestingInstance=function (cfg){
 			this.listeners.push(fn);
 		};
 		inst.sendMessage=function (msg){
-			this.el.contentWindow.__adaptorOnMessage(msg);
+			this.el.contentWindow.__adaptor__.onMessage(msg);
 		};
 		inst.disconnect=function (){
 			$(this.el).remove();
