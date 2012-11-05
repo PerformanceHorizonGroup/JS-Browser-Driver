@@ -157,7 +157,7 @@
 					if(ind>-1)
 						loadingList.splice(ind, 1);
 					if(loadingList.length==0)
-						cb(exportsList);
+						cb&&cb(exportsList);
 				}
 				for(var i=0, loadingList=[]; i<url.length; i++){
 					url[i]=toAbsoluteUrl(url[i], this.url);
