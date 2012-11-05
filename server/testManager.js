@@ -86,91 +86,96 @@ function TestManager(cfg){
 require('util').inherits(TestManager, require('events').EventEmitter);
 util.extend(TestManager.prototype, {
 	onClientMessage:function (mngr, client, msg){
-//		console.log('msg '+msg.id);
-		switch(msg.id){
-			case 'testManager.clientInitialized':
-					var respMsg={
-						id:'testManager.reset',
-						testManagerInfo:this.storage.info
-					};
-					var queue=this.clientManager.slaves[client.name].testsQueue;
-					if(queue.length)
-						respMsg.tests=queue;
-					client.socket.json.send(respMsg);
-					break;
-			case 'testManager.onTestDone':
-	//					console.log('done test '+msg.name);
-					for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
-						if(testsMatch(queue[i], msg)){
-							queue.splice(i, 1);
-	//							console.log('removed test '+msg.name);
-							break;
+		try{
+	//		console.log('msg '+msg.id);
+			switch(msg.id){
+				case 'testManager.clientInitialized':
+						var respMsg={
+							id:'testManager.reset',
+							testManagerInfo:this.storage.info
+						};
+						var queue=this.clientManager.slaves[client.name].testsQueue;
+						if(queue.length)
+							respMsg.tests=queue;
+						client.socket.json.send(respMsg);
+						break;
+				case 'testManager.onTestDone':
+		//					console.log('done test '+msg.name);
+						for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
+							if(testsMatch(queue[i], msg)){
+								queue.splice(i, 1);
+		//							console.log('removed test '+msg.name);
+								break;
+							}
 						}
-					}
-					// relay this message to the managers
-					this.clientManager.sendMessageToManagerClients(extend({
-						slaveName:client.name
-					}, msg));
-					break;
-			case 'testManager.onTestStart':
-					for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
-						if(testsMatch(queue[i], msg)){
-							this.clientManager.slaves[client.name].runningTest=queue[i];
-	//							console.log('starting test '+msg.name);
-							break;
+						// relay this message to the managers
+						this.clientManager.sendMessageToManagerClients(extend({
+							slaveName:client.name
+						}, msg));
+						break;
+				case 'testManager.onTestStart':
+						for(var i=0, queue=this.clientManager.slaves[client.name].testsQueue; i<queue.length; i++){
+							if(testsMatch(queue[i], msg)){
+								this.clientManager.slaves[client.name].runningTest=queue[i];
+		//							console.log('starting test '+msg.name);
+								break;
+							}
 						}
-					}
-	//					var m=extend({
-	//						slaveName:client.name
-	//					}, msg);
-	//					for(var a in this.managerClients) // update manager clients
-	//						this.managerClients[a].socket.json.send(m);
-				// do not break; here and move on with the code in the next case:
-			case 'testManager.onAssertion':
-					// relay this message to the managers
-					this.clientManager.sendMessageToManagerClients(extend({
-						slaveName:client.name
-					}, msg));
-				break;
-			case 'testManager.onAllTestsDone':
-					var b=this.clientManager.slaves[client.name];
-					delete b.runningTest;
-					this.clientManager.sendSlaveUpdateMessage(client.name);
-				break;
-//			case 'getTestData':
-//					for(var i=0; i<this.testFiles.length; i++){
-//						var test=this.getTest(i);
-//						if(test.relFileName==msg.fileName){
-//							client.socket.json.send({
-//								id:'testData',
-//								test:test
-//							});
-//							break;
-//						}
-//					}
-//				break;
-			case 'getTestsList':
-					this.getTestFiles(function (err, tests){
-						client.socket.json.send({
-							id:'testsList',
-							data:tests
+		//					var m=extend({
+		//						slaveName:client.name
+		//					}, msg);
+		//					for(var a in this.managerClients) // update manager clients
+		//						this.managerClients[a].socket.json.send(m);
+					// do not break; here and move on with the code in the next case:
+				case 'testManager.onAssertion':
+						// relay this message to the managers
+						this.clientManager.sendMessageToManagerClients(extend({
+							slaveName:client.name
+						}, msg));
+					break;
+				case 'testManager.onAllTestsDone':
+						var b=this.clientManager.slaves[client.name];
+						delete b.runningTest;
+						this.clientManager.sendSlaveUpdateMessage(client.name);
+					break;
+	//			case 'getTestData':
+	//					for(var i=0; i<this.testFiles.length; i++){
+	//						var test=this.getTest(i);
+	//						if(test.relFileName==msg.fileName){
+	//							client.socket.json.send({
+	//								id:'testData',
+	//								test:test
+	//							});
+	//							break;
+	//						}
+	//					}
+	//				break;
+				case 'getTestsList':
+						this.getTestFiles(function (err, tests){
+							client.socket.json.send({
+								id:'testsList',
+								data:tests
+							});
 						});
-					});
-				break;
-			case 'runTests':
-					for(var i=0; i<msg.slaves.length; i++){
-						var b=this.clientManager.slaves[msg.slaves[i]];
-	//clientManager.slavestestsQueue=msg.tests.slice(0); // copy the queue for each slave
-						this.runTests(b, msg.tests.slice(0)); // copy the queue for each slave
-						this.clientManager.sendSlaveUpdateMessage(msg.slaves[i]);
-//						this.sendMessageToManagerClients(getBrowserUpdateMsg(b));
-	//						for(var a in this.managerClients) // update manager clients
-	//							this.managerClients[a].socket.json.send(getBrowserUpdateMsg(b));
-					}
-				break;
-			case 'reloadTests':
-					this.reloadTests();
-				break;
+					break;
+				case 'runTests':
+						for(var i=0; i<msg.slaves.length; i++){
+							var b=this.clientManager.slaves[msg.slaves[i]];
+		//clientManager.slavestestsQueue=msg.tests.slice(0); // copy the queue for each slave
+							this.runTests(b, msg.tests.slice(0)); // copy the queue for each slave
+							this.clientManager.sendSlaveUpdateMessage(msg.slaves[i]);
+	//						this.sendMessageToManagerClients(getBrowserUpdateMsg(b));
+		//						for(var a in this.managerClients) // update manager clients
+		//							this.managerClients[a].socket.json.send(getBrowserUpdateMsg(b));
+						}
+					break;
+				case 'reloadTests':
+						this.reloadTests();
+					break;
+			}
+		}catch(e){
+			console.log('Exception while processing client message:\n'+JSON.stringify(msg));
+			throw e;
 		}
 	},
 	onBeforeSendSlaveUpdateMessage:function (msg){
