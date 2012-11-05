@@ -70,6 +70,7 @@ function TestManager(cfg){
 	this.storage.info.testsBaseUrl=this.testsUrl;
 	this.storage.info.userLibsDir=path.resolve(path.dirname(appCfg.configFileName), this.userLibsPath);
 	this.storage.info.userLibsUrl=this.userLibsUrl;
+	this.storage.info.clientBaseDir=this.clientManager.server.processParamString('%CLIENT_ROOT%');
 	this.clientManager.server.webServer
 		.use(this.testsUrl, Connect['static'](this.storage.info.testsBaseDir))
 		.use(this.userLibsUrl, Connect['static'](this.storage.info.userLibsDir));
