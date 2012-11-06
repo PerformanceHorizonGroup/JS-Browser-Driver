@@ -12,18 +12,34 @@ var isNodeJS = !(typeof window=='object'),
 
 exports.initialize=function (){
 	
-	var extend, sendMessage, onMessage, testCfg={};
+	var extend, sendMessage, onMessage;
 	
 	globalScope.__adaptor__={
+		testCfg:{},
 		storage:{},
 		requireLib:function (src, cb){
-			return require((isNodeJS ? testCfg.userLibsDir+require('path').sep : testCfg.serverUrl+testCfg.userLibsUrl+'/')+src, cb);
+			var sep=isNodeJS ? require('path').sep:'';
+			if(src instanceof Array){
+				for(var i=0; i<src.length; i++)
+					src[i]=(isNodeJS ? this.testCfg.clientBaseDir+sep+'lib'+sep : this.testCfg.serverUrl+'/lib/')+src[i];
+			}else
+				src=(isNodeJS ? this.testCfg.clientBaseDir+sep+'lib'+sep : this.testCfg.serverUrl+'/lib/')+src;
+			return require(src, cb);
+		},
+		requireCustomLib:function (src, cb){
+			var sep=isNodeJS ? require('path').sep:'';
+			if(src instanceof Array){
+				for(var i=0; i<src.length; i++)
+					src[i]=(isNodeJS ? this.testCfg.userLibsDir+require('path').sep : this.testCfg.serverUrl+this.testCfg.userLibsUrl+'/')+src[i];
+			}else
+				src=(isNodeJS ? this.testCfg.userLibsDir+require('path').sep : this.testCfg.serverUrl+this.testCfg.userLibsUrl+'/')+src;
+			return require(src, cb);
 		},
 		require:function (src, cb){
 			return require(src, cb);
 		},
 		attachScript:attachScript,
-		loadStylesheet:function (src, cb, doc){
+		attachStylesheet:function (src, cb, doc){
 			if(!doc)
 				doc=document;
 			var link=doc.createElement('link'),
@@ -196,7 +212,22 @@ exports.initialize=function (){
 				};
 			},
 			requireLib:function (src, cb){
-				return this.require((isNodeJS ? testCfg.userLibsDir+require('path').sep : testCfg.serverUrl+testCfg.userLibsUrl+'/')+src, cb);
+				var sep=isNodeJS ? require('path').sep:'';
+				if(src instanceof Array){
+					for(var i=0; i<src.length; i++)
+						src[i]=(isNodeJS ? __adaptor__.testCfg.clientBaseDir+sep+'lib'+sep : __adaptor__.testCfg.serverUrl+'/lib/')+src[i];
+				}else
+					src=(isNodeJS ? __adaptor__.testCfg.clientBaseDir+sep+'lib'+sep : __adaptor__.testCfg.serverUrl+'/lib/')+src;
+				return this.require(src, cb);
+			},
+			requireCustomLib:function (src, cb){
+				var sep=isNodeJS ? require('path').sep:'';
+				if(src instanceof Array){
+					for(var i=0; i<src.length; i++)
+						src[i]=(isNodeJS ? __adaptor__.testCfg.userLibsDir+require('path').sep : __adaptor__.testCfg.serverUrl+__adaptor__.testCfg.userLibsUrl+'/')+src[i];
+				}else
+					src=(isNodeJS ? __adaptor__.testCfg.userLibsDir+require('path').sep : __adaptor__.testCfg.serverUrl+__adaptor__.testCfg.userLibsUrl+'/')+src;
+				return this.require(src, cb);
 			},
 			require:function (src, cb){
 				this.setupCount++;
@@ -368,7 +399,7 @@ exports.initialize=function (){
 					processTestsQueue();
 				break;
 			case 'testCfg':
-					extend(testCfg, msg.cfg);
+					extend(__adaptor__.testCfg, msg.cfg);
 				break;
 		}
 	});
