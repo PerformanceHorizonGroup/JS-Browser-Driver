@@ -230,13 +230,19 @@ exports.initialize=function (){
 				return this.require(src, cb);
 			},
 			require:function (src, cb){
-				this.setupCount++;
-				var test=this;
+				var waitFn=this.waitForSetup();
 				return require(src, function (exports){
 					cb&&cb(exports);
+					waitFn();
+				});
+			},
+			waitForSetup:function (){
+				this.setupCount++;
+				var test=this;
+				return function (){
 					test.setupCount--;
 					test.doRun();
-				});
+				};
 			}
 		});
 		extend(Module.prototype, {
