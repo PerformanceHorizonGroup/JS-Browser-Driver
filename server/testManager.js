@@ -174,7 +174,7 @@ util.extend(TestManager.prototype, {
 					break;
 			}
 		}catch(e){
-			console.log('Exception while processing client message:\n'+JSON.stringify(msg));
+			console.log('Exception while processing message from client "'+client.name+'" :\n'+JSON.stringify(msg));
 			throw e;
 		}
 	},
