@@ -152,7 +152,7 @@
 				return requireModuleAtAbsUrl(url, cb);
 			}else{ // an array
 				var exportsList=[];
-				function checkLoadingList(moduleExp, url){
+				function checkLoadingList(url){
 					var ind=$.inArray(url, loadingList);
 					if(ind>-1)
 						loadingList.splice(ind, 1);
@@ -163,9 +163,12 @@
 					url[i]=toAbsoluteUrl(url[i], this.url);
 					loadingList.push(url[i]);
 					(function (){
-						var u=url[i];
+						var u=url[i],
+							ind=i;
 						exportsList.push(require.call(this, u, function (exports){
-							checkLoadingList(exports, u);
+							if(exportsList[ind]!=exports)
+								exportsList[ind]=exports;
+							checkLoadingList(u);
 						}));
 					}());
 				}
