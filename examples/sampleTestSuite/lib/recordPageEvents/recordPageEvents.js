@@ -297,6 +297,7 @@ registerModule(function (module, require){
 			code.push('});');
 			
 			code.push('asyncTest("auto-generated-test", function (){');
+			var expectLineNum=code.length;
 			code.push('var test=this,');
 				code.push('p=this.player,');
 				code.push('testUtils=this.testUtils,');
@@ -391,7 +392,7 @@ registerModule(function (module, require){
 			code.push('});');
 			code.push('});');
 
-			code.splice(4, 0, 'expect('+expectCount+');', '');
+			code.splice(expectLineNum, 0, 'expect('+expectCount+');', '');
 			code.push('');
 			
 			/**
