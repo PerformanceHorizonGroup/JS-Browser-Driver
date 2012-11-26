@@ -83,3 +83,13 @@ h3 {
 .passed {
 	color: teal; 
 }
+
+fieldset.module{
+/*    border: 1px solid #E1E1E8;
+	border-radius: 4px;
+	padding:5px; */
+	margin-bottom:10px;
+}
+fieldset.module legend{
+	margin-bottom:0px;
+}
