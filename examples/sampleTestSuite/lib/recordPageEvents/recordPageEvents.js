@@ -103,12 +103,12 @@ registerModule(function (module, require){
 				mockServerSide:$('.mock-server-side').is(':checked')
 			};
 			$('.generate-test-code').attr('disabled', 'true');
-			$('.recorded-events-list .title', panel).html('Recorded events');
+			$('.recorded-events-list .title', this.el).html('Recorded events');
 			this.eventsList.empty();
 			$('.recording-options :input').attr('disabled', true);
-			$('.record', panel).html('Stop');
+			$('.record', this.el).html('Stop');
 			this.recording=true;
-			$('.recorded-events-list', panel).show();
+			$('.recorded-events-list', this.el).show();
 			// attach event listeners
 			this.frameMngr.el.load(this.onPageLoad);
 			if(this.frameMngr.el.get(0).contentWindow)				
@@ -194,7 +194,7 @@ registerModule(function (module, require){
 				ajaxRequestId:ajaxOptions.__ajax_request_id__,
 				time:new Date()
 			};
-			if(recordingOptions.mockServerSide){
+			if(this.recordingOptions.mockServerSide){
 				d.status=XMLHttpRequest.status;
 				d.statusText=XMLHttpRequest.statusText;
 				d.responseText=XMLHttpRequest.responseText;
@@ -211,7 +211,7 @@ registerModule(function (module, require){
 				ajaxRequestId:ajaxOptions.__ajax_request_id__,
 				time:new Date()
 			};
-			if(recordingOptions.mockServerSide){
+			if(this.recordingOptions.mockServerSide){
 				d.status=XMLHttpRequest.status;
 				d.statusText=XMLHttpRequest.statusText;
 				d.responseText=XMLHttpRequest.responseText;
@@ -275,40 +275,62 @@ registerModule(function (module, require){
 		},
 		generateTestCode:function (){
 			var expectCount=0,
-				code=['driver.loadLib("recordPageEvents/replayPageEvents");'];
-			code.push('driver.loadLib("util");');
-			code.push('asyncTest("auto-generated-test", function (){');
-			code.push('\tvar test=this;');
-			code.push('');
-			code.push('\tdriver.storage.ReplayPageEvents.initialize();');
+				code=['module("auto-generated-module", {'];
+				code.push('setup:function (){');
+					code.push('var env=this;');
+					code.push('this.__testInst.requireCustomLib([\'util\', \'recordPageEvents/replayPageEvents\', \'frameMngr\'], function (exportsList){');
+						code.push('env.testUtils=exportsList[0];');
+						code.push('var waitFn=env.__testInst.waitForSetup();');
+						code.push('env.frameMngr=exportsList[2].createFrame(function (frameMngr){');
+							code.push('frameMngr.el.css({border:0, width:\'100%\', height:\'100%\'});');
+							code.push('env.player=exportsList[1].createPlayer(frameMngr, function (player){');
+								code.push('env.player=player;');
+								code.push('waitFn();');
+							code.push('});');
+						code.push('});');
+					code.push('});');
+				code.push('},');
+				code.push('teardown:function (){');
+					code.push('this.player.frameMngr.el.remove();');
+					code.push('this.player.destroy();');
+				code.push('}');
+			code.push('});');
 			
-			var setAjaxRequestIdCallInd;
+			code.push('asyncTest("auto-generated-test", function (){');
+			code.push('var test=this,');
+				code.push('p=this.player,');
+				code.push('testUtils=this.testUtils,');
+				code.push('frameEl=p.frameMngr.el;');
+			code.push('');
+			code.push('p.initialize();');
+			
+			var expectAjaxRequestCallInd;
 			if(this.recordingOptions.mockServerSide){
-				code.push('\tmockAjaxResponses();');
-				setAjaxRequestIdCallInd=code.length;
+				code.push('p.mockAjaxResponses();');
+				expectAjaxRequestCallInd=code.length;
 			}
 			code.push('');
 			if(this.recordingOptions.recordAjaxData){
-//				code.push('\tdriver.bind("beforePageInit", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
+//				code.push('driver.bind("beforePageInit", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
 				/**
 				 * TO-DO: add this line only of there was a "load" event recorded 
 				 */
-				code.push('\tdriver.targetSiteFrame.load(driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
+				code.push('frameEl.load(p.ajax.attachDocumentListeners.scope(p.ajax));');
 				code.push('');
 			}
 			for(var i=0; i<this.recordedEvents.length; i++){
 				if(i>0 && this.recordedEvents[i].evt.type!='pageLoad' && this.recordedEvents[i].evt.type!='ajaxSend')
-					code.push('\twait('+(this.recordedEvents[i].time.getTime()-this.recordedEvents[i-1].time.getTime())+');');
+					code.push('p.wait('+(this.recordedEvents[i].time.getTime()-this.recordedEvents[i-1].time.getTime())+');');
 				switch(this.recordedEvents[i].evt.type){
 					case 'pageLoad':
 							++expectCount;
-							code.push('\ttestWaitForEvent("load", driver.targetSiteFrame);');
+							code.push('p.testWaitForEvent(\'load\', frameEl);');
 						break;
 					case 'keydown':
 					case 'keyup':
 					case 'keypress':
 							++expectCount;
-							code.push('\ttestFireEvent("'+this.recordedEvents[i].evt.type+'", "'+this.recordedEvents[i].elementPath+'", '+JSON.stringify(this.recordedEvents[i].keyInfo)+');');
+							code.push('p.testFireEvent("'+this.recordedEvents[i].evt.type+'", "'+this.recordedEvents[i].elementPath+'", '+JSON.stringify(this.recordedEvents[i].keyInfo)+');');
 						break;
 //					case 'change':
 					case 'click':
@@ -318,18 +340,18 @@ registerModule(function (module, require){
 					case 'mouseover':
 					case 'mouseout':
 							++expectCount;
-							code.push('\ttestFireEvent("'+this.recordedEvents[i].evt.type+'", "'+this.recordedEvents[i].elementPath+'");');
+							code.push('p.testFireEvent("'+this.recordedEvents[i].evt.type+'", "'+this.recordedEvents[i].elementPath+'");');
 						break;
 					case 'ajaxSend':
 							if(this.recordingOptions.mockServerSide){
-								code.splice(setAjaxRequestIdCallInd++, 0, '\tsetAjaxRequestId('+this.recordedEvents[i].ajaxRequestId+');');
-								code.push('\t// ajaxSend '+this.recordedEvents[i].ajaxRequestId);
+								code.splice(expectAjaxRequestCallInd++, 0, 'p.expectAjaxRequest('+this.recordedEvents[i].ajaxRequestId+');');
+								code.push('// ajaxSend '+this.recordedEvents[i].ajaxRequestId);
 							}else
 								// find the response that the server returned in the events following
 								for(var e=i+1; e<this.recordedEvents.length; e++)
 									if(this.recordedEvents[e].ajaxRequestId==this.recordedEvents[i].ajaxRequestId){
 										++expectCount;
-										code.push('\ttestWaitForEvent("'+this.recordedEvents[e].evt.type+'", ajaxEventEmitter);');
+										code.push('p.testWaitForEvent("'+this.recordedEvents[e].evt.type+'", p.ajax);');
 										this.recordedEvents.splice(e, 1);
 										break;
 									}
@@ -337,7 +359,7 @@ registerModule(function (module, require){
 					case 'ajaxSuccess':
 					case 'ajaxError':
 							if(this.recordingOptions.mockServerSide){
-								code.push('\tcompleteAjaxRequest('+JSON.stringify({
+								code.push('p.completeAjaxRequest('+JSON.stringify({
 									responseType:this.recordedEvents[i].evt.type,
 									status:this.recordedEvents[i].status,
 									statusText:this.recordedEvents[i].statusText,
@@ -351,26 +373,30 @@ registerModule(function (module, require){
 							/**
 							 *  TO-DO: remove the "origin" part like "http://site.com:80" 
 							 */
-							code.push('\ttestUtils.setPath("'+this.recordedEvents[i].href+'", ok);');
+							code.push('testUtils.setPath(frameEl, \''+this.recordedEvents[i].href+'\', ok);');
 						break;
 				}
 			}
 			code.push('');
-			code.push('\texecCb(function (){');
-			if(this.recordingOptions.recordAjaxData){
-				code.push('\t\tdriver.storage.ReplayPageEvents.ajax.detachDocumentListeners();');
-				code.push('\t\tdriver.targetSiteFrame.unbind("load", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
-//				code.push('\t\tdriver.unbind("beforePageInit", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
-				code.push('');
-			}
+			code.push('p.execCb(function (){');
+//			if(this.recordingOptions.recordAjaxData){
+//				code.push('driver.storage.ReplayPageEvents.ajax.detachDocumentListeners();');
+//				code.push('driver.targetSiteFrame.unbind("load", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
+////				code.push('driver.unbind("beforePageInit", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
+//				code.push('');
+//			}
 			++expectCount;
-			code.push('\t\tok(true, "complete");');
-			code.push('\t\tstart();');
-			code.push('\t});');
+			code.push('ok(true, "complete");');
+			code.push('start();');
+			code.push('});');
 			code.push('});');
 
-			code.splice(4, 0, '\texpect('+expectCount+');', '');
+			code.splice(4, 0, 'expect('+expectCount+');', '');
 			code.push('');
+			
+			/**
+			 * TO-DO: pass this through a beautifier like https://github.com/einars/js-beautify
+			 */
 
 			return code.join('\n');
 		},
@@ -397,6 +423,5 @@ registerModule(function (module, require){
 				});
 		}
 	});
-
 
 });

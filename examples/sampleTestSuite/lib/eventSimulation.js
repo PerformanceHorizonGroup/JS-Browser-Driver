@@ -1,5 +1,7 @@
-(function (){
-	driver.storage.fireEvent=function (eventType, target, eventInfo){
+registerModule(function (module, require){
+	var exports=module.exports;
+
+	exports.fireEvent=function (eventType, target, eventInfo){
 	    /**
 	     * TO-DO: createEvent may need to have priority before createEventObject because it is the DOM standard
 	     */
@@ -58,4 +60,5 @@
 		    }
 	    }
 	};
-}());
+
+});
