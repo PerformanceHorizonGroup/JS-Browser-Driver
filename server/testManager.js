@@ -171,6 +171,12 @@ util.extend(TestManager.prototype, {
 					break;
 				case 'reloadTests':
 						this.reloadTests();
+						this.once('testsLoaded', function (testFiles){
+							mngr.sendMessageToManagerClients({
+								id:'testsList',
+								data:testFiles
+							});
+						});
 					break;
 			}
 		}catch(e){
