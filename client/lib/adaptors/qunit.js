@@ -99,7 +99,11 @@ exports.initialize=function (){
 						console.log('ERR: processSourceFilesQueue failed loading "'+sourceFilesQueue[0].filePath+'": '+err)
 					else{
 //						console.log('runInThisContext '+sourceFilesQueue[0])
-						vm.runInThisContext(fileData, sourceFilesQueue[0].filePath);
+						try{
+							vm.runInThisContext(fileData, sourceFilesQueue[0].filePath);
+						}catch(e){
+							console.log('Exception occured while processing test source: '+e.stack);
+						}
 					}
 					fileProcessed();
 				});
