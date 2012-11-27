@@ -1,5 +1,5 @@
 # JS Browser Driver
-The JS Browser Driver is a Node.JS project aiming to simplify writing and running automated UI tests in JS.
+The JS Browser Driver is a Node.JS project originally aiming to simplify writing and running automated UI tests in JS but with the latest development it is now able do much more - it can also run tests inside node.js and in fact is able to manage the execution of code for arbitrary purposes.
 
 _(more info can be found in the [Wiki](https://github.com/PerformanceHorizonGroup/JS-Browser-Driver/wiki) pages)_
 
@@ -22,7 +22,7 @@ or if not then go to the package directory and start it with node like:
 
     node server/server.js configFileName="path/to/xxx.conf.json"
 
-### Setting up the browsers
+### Setting up the slaves
 Within the conf.json config file, you need to provide an absolute link to each browser. Predictably, this isn't particularly easy as there can be various conflicts with browser windows that are already open. We have gone through this pain many times, so here's a guide for the major browsers:
 
 - **Chrome**
@@ -82,6 +82,16 @@ Within the conf.json config file, you need to provide an absolute link to each b
                 "args":[]
             }
 
+- **node.js (any OS)**
+    
+        A node.js istance can act as a slave too provided that it runs the slave instance code:
+    
+            {
+                "name":"Node.js",
+                "app":"%CLIENT_ROOT%/node.js/node-slave.js",
+                "args":[]
+            }
+
 ## Examples
 Ok, so enough with all the waffle, lets run some pre-baked tests included in the project! Depending on how your `npm` is set up, you need to direct the browser driver to the location of the example tests config file. Before you try to action this, please ensure that you have set up at least 1 browser inside that config file - see above for the gory details. 
 
@@ -91,7 +101,7 @@ Ok, so in this example, we will fire up the BrowserDriver on OS X, by pointing t
     
 If all is well, you should see the BrowserDriver start up:
 
-    testing server started
+    starting server
     reading configuration file /usr/local/lib/node_modules/browser-driver/examples/sampleTestSuite/testing.conf.json
     Server listening on port 8090 at localhost
     Go to http://localhost:8090/manager/manager.html to manage and run tests
