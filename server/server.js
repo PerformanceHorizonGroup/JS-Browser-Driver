@@ -41,18 +41,20 @@ var host,
 //		}
 		],
 		
-		slaveModules:[],	// a list with modules that the slaves need to load
+		slaveModules:[{
+			"fileName":"/modules/testManager",
+			"adaptor":"/lib/adaptors/qunit"
+		}],	// a list with modules that the slaves need to load
 		
-		modules:{
-			'TestManager':{
-				requirePath:'./testManager',
-				adaptor:'../client/lib/adaptors/qunit',
-				testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
-				userLibsPath:'lib', // must be relative to the config file path
-				testsUrl:'/manager/tests/sources',
-				userLibsUrl:'/manager/tests/lib'
-			}
-		},	// modules that the server needs to load
+		modules:[{
+			name:'TestManager',
+			requirePath:'./testManager',
+			adaptor:'../client/lib/adaptors/qunit',
+			testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
+			userLibsPath:'lib', // must be relative to the config file path
+			testsUrl:'/manager/tests/sources',
+			userLibsUrl:'/manager/tests/lib'
+		}],	// modules that the server needs to load
 		
 		interactiveMode:false, // if false then load tests from "autoRunTests" and run them in all slaves starting up those specified in "autoRunSlaves". can be overridden with command-line arguments
 		autoRunTests:[], // a list of tests to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
@@ -138,7 +140,7 @@ function startServer(cfgOverrides){
 			webServer:Connect.createServer(
 //				Connect.gzip(),
 			),
-			modules:{},
+			modules:[],
 			params:{
 				SERVER_ROOT:__dirname,
 				CLIENT_ROOT:path.resolve(__dirname, '../client')
@@ -162,8 +164,8 @@ function startServer(cfgOverrides){
 		}());
 		
 		server.clientManager=require('./clientManager').create({server:server});
-		for(var m in cfg.modules)
-			server.modules[m]=require(cfg.modules[m].requirePath).init(extend(true, {server:server, name:m}, cfg.modules[m]));
+		for(var i=0; i<cfg.modules.length; i++)
+			server.modules.push(require(cfg.modules[i].requirePath).init(extend(true, {server:server}, cfg.modules[i])));
 	
 //		for(var b=0; b<cfg.slaves.length; b++)
 //			webServer.browserManager.addBrowser(extend({
