@@ -19,9 +19,5 @@
 		"fork":"%CLIENT_ROOT%/node.js/node-slave.js",
 		"args":[]
 	}],
-	"interactiveMode":true,
-	"slaveModules":[{
-		"fileName":"/modules/testManager",
-		"adaptor":"/lib/adaptors/qunit"
-	}]
+	"interactiveMode":true
 }
