@@ -423,8 +423,8 @@ function attachScript(src, cb, doc){
 		doc=document;
 	var script=doc.createElement('SCRIPT'),
 		head=doc.getElementsByTagName('head')[0];
-	script.src=src;
-	script.type='text/javascript';
+	script.setAttribute('src', src);
+	script.setAttribute('type', 'text/javascript');
 	
 	if($.browser.msie) // no load event in IE so wait for readyState
 		script.onreadystatechange=function(){
@@ -441,6 +441,7 @@ function attachScript(src, cb, doc){
 			if(cb)
 				cb()
 		});
+	
 		
 	head.appendChild(script);
 	
@@ -465,8 +466,7 @@ exports.createTestingInstance=function (cfg){
 		inst.listeners=[];
 		inst.el=document.createElement('iframe');
 		inst.el.className='testing-instance';
-		document.body.appendChild(inst.el);
-//		$(inst.el).bind('load', function (){
+		$(inst.el).one('load', function (){
 			/**
 			 * TO-DO: try to use asyncFlow instead of nesting callbacks
 			 */
@@ -482,7 +482,7 @@ exports.createTestingInstance=function (cfg){
 							});
 						}, doc);
 				}, doc);
-//		});
+		});
 		inst.onMessage=function (fn){
 			this.listeners.push(fn);
 		};
@@ -494,6 +494,8 @@ exports.createTestingInstance=function (cfg){
 			delete this.el;
 			this.listeners.splice(0, this.listeners.length);
 		};
+
+		document.body.appendChild(inst.el);
 	}	
 	return inst;
 };
