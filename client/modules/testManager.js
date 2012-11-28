@@ -240,6 +240,10 @@ registerModule(function (module, require){
 			},
 			reset:function (){
 				this.testsQueue=[];
+				if(this.testInstance)
+					this.testInstance.sendMessage({
+						id:'reset'
+					});
 //				this.testSources={};
 			}
 		});

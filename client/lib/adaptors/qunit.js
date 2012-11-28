@@ -411,6 +411,9 @@ exports.initialize=function (){
 			case 'testCfg':
 					extend(__adaptor__.testCfg, msg.cfg);
 				break;
+			case 'reset': console.log('reset')
+					testCache={};
+				break;
 		}
 	});
 };
