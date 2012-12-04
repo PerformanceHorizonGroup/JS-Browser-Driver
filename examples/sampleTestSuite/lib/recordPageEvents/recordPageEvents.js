@@ -316,7 +316,7 @@ registerModule(function (module, require){
 				/**
 				 * TO-DO: add this line only of there was a "load" event recorded 
 				 */
-				code.push('frameEl.load(p.ajax.attachDocumentListeners.scope(p.ajax));');
+				code.push('frameEl.one("beforePageInit", p.ajax.attachDocumentListeners.scope(p.ajax));');
 				code.push('');
 			}
 			for(var i=0; i<this.recordedEvents.length; i++){
