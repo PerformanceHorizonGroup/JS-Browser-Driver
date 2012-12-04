@@ -312,11 +312,10 @@ registerModule(function (module, require){
 			}
 			code.push('');
 			if(this.recordingOptions.recordAjaxData){
-//				code.push('driver.bind("beforePageInit", driver.storage.ReplayPageEvents.ajax.attachDocumentListeners);');
 				/**
-				 * TO-DO: add this line only of there was a "load" event recorded 
+				 * TO-DO: add this line only if there was a "load" event recorded 
 				 */
-				code.push('frameEl.one("beforePageInit", p.ajax.attachDocumentListeners.scope(p.ajax));');
+				code.push('frameEl.one("beforePageInit", p.ajax.attachDocumentListeners);');
 				code.push('');
 			}
 			for(var i=0; i<this.recordedEvents.length; i++){

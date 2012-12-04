@@ -29,6 +29,7 @@ registerModule(function (module, require){
 			// scope these methods so they can be passed as event callbacks
 			this.ajaxSuccess=this.ajaxSuccess.scope(this);
 			this.ajaxError=this.ajaxError.scope(this);
+			this.attachDocumentListeners=this.attachDocumentListeners.scope(this);
 		},
 		getRequestId:function (){
 			return this.player.ajaxRequestIds.shift();
