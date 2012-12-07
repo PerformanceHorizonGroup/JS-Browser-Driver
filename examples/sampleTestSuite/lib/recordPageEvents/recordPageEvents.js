@@ -252,26 +252,28 @@ registerModule(function (module, require){
 		detachDocumentListeners:function (){
 			var win=this.frameMngr.el.get(0).contentWindow,
 				doc=win.document;
-			$(doc).unbind('click', this.appendRecordedEvent);
-			$(doc).unbind('dblclick', this.appendRecordedEvent);
-			$(doc).unbind('mousedown', this.appendRecordedEvent);
-			$(doc).unbind('mouseup', this.appendRecordedEvent);
-			if(this.recordingOptions.recordHoverEvents){
-				$(doc).unbind('mouseover', this.appendRecordedEvent);
-				$(doc).unbind('mouseout', this.appendRecordedEvent);
+			if(win.documentListenersAttached){
+				win.$(doc).unbind('click', this.appendRecordedEvent);
+				win.$(doc).unbind('dblclick', this.appendRecordedEvent);
+				win.$(doc).unbind('mousedown', this.appendRecordedEvent);
+				win.$(doc).unbind('mouseup', this.appendRecordedEvent);
+				if(this.recordingOptions.recordHoverEvents){
+					win.$(doc).unbind('mouseover', this.appendRecordedEvent);
+					win.$(doc).unbind('mouseout', this.appendRecordedEvent);
+				}
+				win.$(doc).unbind('keydown', this.appendRecordedEvent);
+				win.$(doc).unbind('keyup', this.appendRecordedEvent);
+				win.$(doc).unbind('keypress', this.appendRecordedEvent);
+				if(this.recordingOptions.recordAjaxData){
+					win.$(doc).unbind('ajaxSend', this.onAjaxSend);
+		//			win.$(doc).unbind('ajaxComplete', onAjaxComplete);
+					win.$(doc).unbind('ajaxSuccess', this.onAjaxSuccess);
+					win.$(doc).unbind('ajaxError', this.onAjaxError);
+				}
+				if(this.recordingOptions.mockServerSide){
+				}
+				win.documentListenersAttached=false;
 			}
-			$(doc).unbind('keydown', this.appendRecordedEvent);
-			$(doc).unbind('keyup', this.appendRecordedEvent);
-			$(doc).unbind('keypress', this.appendRecordedEvent);
-			if(this.recordingOptions.recordAjaxData){
-				win.$(doc).unbind('ajaxSend', this.onAjaxSend);
-	//			win.$(doc).unbind('ajaxComplete', onAjaxComplete);
-				win.$(doc).unbind('ajaxSuccess', this.onAjaxSuccess);
-				win.$(doc).unbind('ajaxError', this.onAjaxError);
-			}
-			if(this.recordingOptions.mockServerSide){
-			}
-			win.documentListenersAttached=false;
 		},
 		generateTestCode:function (){
 			var expectCount=0,
