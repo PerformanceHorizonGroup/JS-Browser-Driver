@@ -219,11 +219,16 @@ registerModule(function (module, require){
 		 * (Object) req - the request parameters to match against;
 		 * (Boolean) once - whether to discard the entry after the first matched request or keep serving subsequent requests;
 		 */
-		completeAjaxRequest:function (cfg){  console.log('completeAjaxRequest ['+cfg.ajaxRequestId+']'); console.log(JSON.stringify(this.ajax.runningAjaxRequests))
-			if(this.mockAjaxResponses && this.ajax.runningAjaxRequests[cfg.ajaxRequestId]){   console.log('completeAjaxRequest '+cfg.ajaxRequestId)
-				var req=this.ajax.runningAjaxRequests[cfg.ajaxRequestId];
-				delete this.ajax.runningAjaxRequests[cfg.ajaxRequestId];
-				req.callback(cfg.status, cfg.statusText, {text:cfg.responseText});
+		completeAjaxRequest:function (cfg){  console.log('completeAjaxRequest ('+cfg.ajaxRequestId+')'); console.log(JSON.stringify(this.ajax.runningAjaxRequests))
+			if(this.mockAjaxResponses){
+				if(this.ajax.runningAjaxRequests[cfg.ajaxRequestId]){
+					console.log('completeAjaxRequest '+cfg.ajaxRequestId)
+					var req=this.ajax.runningAjaxRequests[cfg.ajaxRequestId];
+					delete this.ajax.runningAjaxRequests[cfg.ajaxRequestId];
+					req.callback(cfg.status, cfg.statusText, {text:cfg.responseText});
+					ok(true, 'completed AJAX request '+cfg.ajaxRequestId);
+				}else
+					ok(false, 'trying to complete AJAX request '+cfg.ajaxRequestId+' but it\'s not been fired yet');
 			}
 		},
 		mockAjaxResponses:function (mock){
