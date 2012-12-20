@@ -240,7 +240,7 @@ registerModule(function (module, require){
 			},
 			reset:function (){
 				this.testsQueue=[];
-				if(this.testInstance)
+				if(this.testInstance && this.testInstance.initialized)
 					this.testInstance.sendMessage({
 						id:'reset'
 					});
