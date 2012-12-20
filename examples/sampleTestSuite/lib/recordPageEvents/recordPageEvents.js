@@ -53,6 +53,9 @@ registerModule(function (module, require){
 						'<div class="recording-tools">' +
 							'<button class="generate-test-code btn btn-primary"><i class="icon-cog icon-white"></i> Generate Test</button>' +
 						'</div>' +
+						/**
+						 * TO-DO: add "Auto scroll" option to the events list
+						 */
 						'<div class="recorded-events-list"><span class="title">Recorded events</span>:<div class="items"></div></div>' +
 					'</div>')
 					.appendTo(document.body)
@@ -176,7 +179,9 @@ registerModule(function (module, require){
 			this.eventsList.append('<div>ajaxSend</div>');
 			var d={
 				evt:{
-					type:'ajaxSend'
+					type:'ajaxSend',
+					url:ajaxOptions.__originalOptions_cache__.url,
+					data:ajaxOptions.__originalOptions_cache__.data
 				},
 				originalOptions:ajaxOptions.__originalOptions_cache__,
 				ajaxRequestId:ajaxOptions.__ajax_request_id__,
@@ -348,6 +353,8 @@ registerModule(function (module, require){
 							if(this.recordingOptions.mockServerSide){
 								code.splice(expectAjaxRequestCallInd++, 0, 'p.expectAjaxRequest('+this.recordedEvents[i].ajaxRequestId+');');
 								code.push('// ajaxSend '+this.recordedEvents[i].ajaxRequestId);
+								code.push('// [url]: '+this.recordedEvents[i].evt.url);
+								code.push('// [data]: '+JSON.stringify(this.recordedEvents[i].evt.data));
 							}else
 								// find the response that the server returned in the events following
 								for(var e=i+1; e<this.recordedEvents.length; e++)
