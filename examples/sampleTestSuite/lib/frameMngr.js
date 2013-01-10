@@ -2,6 +2,9 @@
  * Manages an IFRAME instance and provides helper functions for it.
  * (it is supposed to run only in a browser)
  */
+/**
+ * TO-DO: add the option to overlay the IFRAME so the user will not be able to click and interfere
+ */
 registerModule(function (module, require){
 	var exports=module.exports;
 	
