@@ -1,20 +1,22 @@
 {
 	"server":{
-		"SocketIO":{
-			"port":8090
-		},
+		"port":8090,
 		"browserDriverUrl":"http://localhost:8090/BrowserDriver.html",
 		"otherUrlMappings":{
 		    "public_html":"/public_html"
 		}
 	},
-	"browsers":[{
+	"slaves":[{
 		"name":"Firefox",
 		"app":"firefox",
 		"args":[]
 	},{
 		"name":"Chrome",
 		"app":"chromium-browser",
+		"args":[]
+	},{
+		"name":"Node.js",
+		"fork":"%CLIENT_ROOT%/node.js/node-slave.js",
 		"args":[]
 	}],
 	"interactiveMode":true

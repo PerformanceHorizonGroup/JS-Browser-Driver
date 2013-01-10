@@ -18,26 +18,26 @@ window.BrowserDriver.Manager={
 };
 
 $(document).ready(function (){
-	if('adaptor' in driver)
-		driver.adaptor.initialize();
-	driver.bind('testRead', function (drv, testData){
-		var module=null;
-		for(var i=0; i<BrowserDriver.Manager.testModules.length; i++)
-			if(BrowserDriver.Manager.testModules[i].name==testData.module){
-				module=BrowserDriver.Manager.testModules[i];
-				break;
-			}
-		if(!module){
-			module={
-				name:testData.module,
-				tests:[]
-			};
-			BrowserDriver.Manager.testModules.push(module);
-		}		
-		module.tests.push(testData);
-	});
+//	if('adaptor' in driver)
+//		driver.adaptor.initialize();
+//	driver.bind('testRead', function (drv, testData){
+//		var module=null;
+//		for(var i=0; i<BrowserDriver.Manager.testModules.length; i++)
+//			if(BrowserDriver.Manager.testModules[i].name==testData.module){
+//				module=BrowserDriver.Manager.testModules[i];
+//				break;
+//			}
+//		if(!module){
+//			module={
+//				name:testData.module,
+//				tests:[]
+//			};
+//			BrowserDriver.Manager.testModules.push(module);
+//		}		
+//		module.tests.push(testData);
+//	});
 
-	var browsers={};
+	var slaves={};
 	var socket=io.connect(null);
 	socket.on('connect', onConnect);
 	socket.on('message', onMessage);
@@ -54,48 +54,71 @@ $(document).ready(function (){
 		socket.json.send({
 			id:'getBrowserUpdates'
 		});
-		socket.json.send({
-			id:'getTestsList'
-		});
 	}
 	function onMessage(msg){
 		console.log('msg '+JSON.stringify(msg));
 		switch(msg.id){
 			case 'appCfg':
 					BrowserDriver.Manager.storage.appCfg=msg.appCfg;
+//					driver.storage.appCfg=msg.appCfg;
+//					if(driver.storage.appCfg.slaveModules.length){
+//						driver.one('initModules', function (driver){
+//							socket.json.send({
+//								id:'getTestsList'
+//							});
+//						});
+//						driver.initModules();
+//					}else{
+						socket.json.send({
+							id:'getTestsList'
+						});
+//					}
 				break;
-			case 'browserUpdate':
-					if(msg.data.name in browsers)
-						$.extend(browsers[msg.data.name], msg.data);
+			case 'slaveUpdate':
+					if(msg.data.name in slaves)
+						$.extend(slaves[msg.data.name], msg.data);
 					else{
-						browsers[msg.data.name]=msg.data;
+						slaves[msg.data.name]=msg.data;
 					}
 					updateBrowser(msg.data.name);
 				break;
 			case 'testsList':
-					/**
-					 * TO-DO: may be better to not get the complete list of test files and eval it here
-					 * but do that on the server and only send results.
-					 */
 					BrowserDriver.Manager.testModules=[];
-					for(var i=0; i<msg.data.length; ++i){
-						if(driver.trigger('beforeLoadTestSource', [msg.data[i].name])!==false)
-							eval(msg.data[i].source);
+					for(var i=0, files=msg.data; i<files.length; ++i){ // cycle the files
+						for(var t=0; t<files[i].tests.length; t++){
+							var module=null,
+								test=files[i].tests[t];
+							test.fileName=files[i].fileName;
+							test.relFileName=files[i].relFileName;
+							for(var m=0; m<BrowserDriver.Manager.testModules.length; m++)
+								if(BrowserDriver.Manager.testModules[m].name==test.module){
+									module=BrowserDriver.Manager.testModules[m];
+									break;
+								}
+							if(!module){
+								module={
+									name:test.module,
+									tests:[]
+								};
+								BrowserDriver.Manager.testModules.push(module);
+							}		
+							module.tests.push(test);
+						}
 					}
 					$('#testsList .test-details').remove();
 					printTests(BrowserDriver.Manager.testModules, $('#testsList').empty());
 				break;
-			case 'onTestStart':
-					$('#console').prepend('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.browserName+'] test start: "'+msg.name+'"</div>');
-					for(var i=0, queue=browsers[msg.browserName].testsQueue; i<queue.length; i++){
+			case 'testManager.onTestStart':
+					$('#console').prepend('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test start: "'+msg.name+'"</div>');
+					for(var i=0, queue=slaves[msg.slaveName].testsQueue; i<queue.length; i++){
 						if(((!queue[i].module && !msg.module) || (queue[i].module==msg.module)) && queue[i].fileName==msg.fileName && queue[i].name==msg.name){
 							queue[i].el.addClass('running');
 							break;
 						}
 					}
 				break;
-			case 'onAssertion':
-					var html='<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.browserName+'] test "'+msg.name+'"';
+			case 'testManager.onAssertion':
+					var html='<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test "'+msg.name+'"';
 					if('expected' in msg){
 						html+=', expected: '+msg.expected;
 						html+=', actual: '+msg.actual;
@@ -105,9 +128,9 @@ $(document).ready(function (){
 					html+='</div>';
 					$('#console').prepend($(html).addClass('done '+(msg.result?'passed':'failed')));
 				break;
-			case 'onTestDone':
-					$('#console').prepend($('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.browserName+'] test done: "'+msg.name+'", '+msg.failed+', '+msg.passed+', '+msg.total+'</div>').addClass('done '+(msg.failed?'failed':'passed')));
-					for(var i=0, queue=browsers[msg.browserName].testsQueue; i<queue.length; i++){
+			case 'testManager.onTestDone':
+					$('#console').prepend($('<div>['+formatDate(new Date(), 'HH:mm:ss')+', '+msg.slaveName+'] test done: "'+msg.name+'", '+msg.failed+', '+msg.passed+', '+msg.total+'</div>').addClass('done '+(msg.failed?'failed':'passed')));
+					for(var i=0, queue=slaves[msg.slaveName].testsQueue; i<queue.length; i++){
 						if(((!queue[i].module && !msg.module) || (queue[i].module==msg.module)) && queue[i].fileName==msg.fileName && queue[i].name==msg.name){
 							queue[i].el.removeClass('running').addClass('done '+(msg.failed?'failed':'passed')).children('.assertions').html(msg.failed+', '+msg.passed+', '+msg.total);
 							break;
@@ -129,21 +152,21 @@ $(document).ready(function (){
 		}
 	}
 	$('.connect-browser').live('click', function (){
-		var b=browsers[$(this).closest('div.browser-control').attr('browsername')];
+		var b=slaves[$(this).closest('div.browser-control').attr('browsername')];
 		if(this.innerHTML=='Connect'){
-			if('app' in b)
+			if(('app' in b) || ('fork' in b))
 				socket.json.send({
-					id:'runBrowser',
+					id:'runSlave',
 					name:b.name
 				});
 		}else
 			socket.json.send({
-				id:'disconnectBrowser',
+				id:'disconnectSlave',
 				name:b.name
 			});
 	});
 	function updateBrowser(name){
-		var b=browsers[name];
+		var b=slaves[name];
 		if(!b.el)
 			b.el=$('<div browsername="'+name+'" class="browser-control"></div>').appendTo($('#browsersList'));
 		b.el.html('<input type="checkbox"> '+name
@@ -152,10 +175,10 @@ $(document).ready(function (){
 						' <a href="'
 //						+BrowserDriver.Manager.storage.appCfg.server.siteBaseUrl
 						+BrowserDriver.Manager.storage.appCfg.server.browserDriverUrl
-						+'?socketIOServerProtocol='+BrowserDriver.Manager.storage.appCfg.server.SocketIO.protocol
-						+'&socketIOServerHost='+BrowserDriver.Manager.storage.appCfg.server.SocketIO.host
-						+'&socketIOServerPort='+BrowserDriver.Manager.storage.appCfg.server.SocketIO.port
-						+'&browserName='+name
+						+'?socketIOServerProtocol='+BrowserDriver.Manager.storage.appCfg.server.protocol
+						+'&socketIOServerHost='+BrowserDriver.Manager.storage.appCfg.server.host
+						+'&socketIOServerPort='+BrowserDriver.Manager.storage.appCfg.server.port
+						+'&slaveName='+name
 						+'">url</a>'
 					: '' )
 				);
@@ -165,9 +188,9 @@ $(document).ready(function (){
 	
 	$('#runSelected').click(function (){
 		var tests=[],
-			browsers=[];
+			slaves=[];
 		$('.browser-control :checked').each(function (){
-			browsers.push($(this).closest('.browser-control').attr('browsername'));
+			slaves.push($(this).closest('.browser-control').attr('browsername'));
 		});
 		$('.test-details :checked').each(function (){
 			tests.push({
@@ -180,7 +203,7 @@ $(document).ready(function (){
 		socket.json.send({
 			id:'runTests',
 			tests:tests,
-			browsers:browsers
+			slaves:slaves
 		});
 	});
 	$('#reloadTests').click(function (){

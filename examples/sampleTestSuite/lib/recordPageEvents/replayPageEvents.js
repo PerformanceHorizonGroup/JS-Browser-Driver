@@ -1,32 +1,167 @@
-(function (){
-	driver.loadLib("eventSimulation");
+registerModule(function (module, require){
+	var exports=module.exports;
+
+	var EventEmitter, eventSimulation,
+		cbs=[];
+	require(['../jquery-ui-1.8.16.custom.min', '../jquery.getPath', '../eventSimulation'], function (exports){
+		eventSimulation=exports[2];
+		__adaptor__.requireLib(['events', 'helpers'], function (exportsList){
+			EventEmitter=exportsList[0].EventEmitter;
+			window.recordPageEvents={};
+			$.extend(Player.prototype, EventEmitter.prototype);
+			$.extend(AjaxHelper.prototype, EventEmitter.prototype);
+			
+			while(cbs.length)
+				cbs.shift()();
+			cbs=null;
+		});
+	});
 	
-	var waiting=false,
-		autoWait=0,
-		eventQueue=[],
-		ajaxRequestIds=[],
-		mockAjaxResponses=false,
-		runningAjaxRequests={};
-		
-	function processQueue(){
-//		console.log('process '+eventQueue.length+' events in queue');
-		while(!waiting && eventQueue.length){
-			var e=eventQueue.shift();
-//			console.log('exec from queue: '+e.fn.name);
-			e.fn.apply(null, e.args);
+	function AjaxHelper(cfg){
+		$.extend(true, this, cfg); //		EventEmitter.call(this, arguments);
+		this.initialize();
+	}
+	$.extend(AjaxHelper.prototype, {
+		initialize:function (){
+			this.runningAjaxRequests={};
+			this.ajaxEventEmitter=new EventEmitter();
+
+			// scope these methods so they can be passed as event callbacks
+			this.ajaxSuccess=this.ajaxSuccess.scope(this);
+			this.ajaxError=this.ajaxError.scope(this);
+			this.attachDocumentListeners=this.attachDocumentListeners.scope(this);
+		},
+		getRequestId:function (){
+			return this.player.ajaxRequestIds.shift();
+		},
+//	function ajaxSend(event, jqXHR, ajaxOptions){ ajaxOptions.__ajax_request_id__ = driver.storage.ReplayPageEvents.ajax.getRequestId(); }
+		ajaxSuccess:function (event, jqXHR, ajaxSettings){
+			this.emit("ajaxSuccess", jqXHR, ajaxSettings);
+		},
+		ajaxError:function (event, jqXHR, ajaxSettings, thrownError){
+			this.emit("ajaxError", jqXHR, ajaxSettings, thrownError);
+		},
+		attachDocumentListeners:function (){  //console.log('attachDocumentListeners')
+			var win=this.player.frameMngr.el.get(0).contentWindow,
+				helper=this;
+			if(!win.ajaxListenersAttached){
+				win.$(win.document)
+//						.ajaxSend(ajaxSend)
+					.ajaxSuccess(this.ajaxSuccess)
+					.ajaxError(this.ajaxError);
+				// try to register this as the first selected transport for all types
+				win.$.ajaxTransport( "+json +text +html +*", function( options, originalOptions, jqXHR ){  //console.log('ajaxTransport')
+//						debugger
+					if(helper.player.mockAjaxResponses){
+						var req={
+							send:function ( headers, callback ){
+								var ajaxRequestId=helper.getRequestId();    console.log('send '+ajaxRequestId)
+								options.__ajax_request_id__ = ajaxRequestId;
+								helper.runningAjaxRequests[ajaxRequestId]=req;
+								req.callback=callback;
+							},
+							abort:function (){
+								delete helper.runningAjaxRequests[options.__ajax_request_id__];
+							}
+						};
+						return req;
+					}
+				});
+				win.ajaxListenersAttached=true;
+			}
+		},
+		detachDocumentListeners:function (){
+			var win=this.player.frameMngr.el.get(0).contentWindow;
+			win.$(win.document)
+//					.unbind('ajaxSend', ajaxSend)
+				.unbind('ajaxSuccess', ajaxSuccess)
+				.unbind('ajaxError', ajaxError);
+			win.ajaxListenersAttached=false;
 		}
+	});
+	
+	function Player(cfg){
+		$.extend(true, this, cfg); //		EventEmitter.call(this, arguments);
+		this.initialize();
 	}
-	function onWaitedForEvent(){
-		waiting=false;
-		setTimeout(processQueue, 100); // decouple event handlers
-	}
+	
+	$.extend(Player.prototype, {
+		initialize:function (){
+			this.ajax=new AjaxHelper({player:this});
+
+			this.eventQueueTimer=null;
+			this.waiting=false;
+			this.autoWait=0;
+			this.eventQueue=[];
+//			clearTimeout(this.eventQueueTimer);
+			this.ajaxRequestIds=[];
+			this.mockAjaxResponses=false;
+
+			// scope these methods so they can be passed as event callbacks
+			this.onWaitedForEvent=this.onWaitedForEvent.scope(this);
+			this.processQueue=this.processQueue.scope(this);
+
+			var player=this;
+			function addWaitingCheck(fn){
+				return function (){
+					if(player.autoWait)
+						player.wait(player.autoWait);
+					if(player.waiting){
+						player.eventQueue.push({
+							fn:fn,
+							args:arguments
+						});
+					}else{
+						return fn.apply(player, arguments);
+					}
+				};
+			}
+			
+			for(var m in methods){
+				if(m=='wait'){ // wait returns onWaitedForEvent and addWaitingCheck will block this if waiting==true
+					this.wait=(function (fn){
+						return function (){
+							if(player.waiting){
+								player.eventQueue.push({
+									fn:fn,
+									args:arguments
+								});
+								return player.onWaitedForEvent;
+							}else{
+								return fn.apply(player, arguments);
+							}
+						};
+					}(methods[m]));
+				}else
+					this[m] = addWaitingCheck(methods[m]);
+			}
+		},
+		processQueue:function (){
+	//		console.log('process '+eventQueue.length+' events in queue');
+			while(!this.waiting && this.eventQueue.length){
+				var e=this.eventQueue.shift();
+	//			console.log('exec from queue: '+e.fn.name);
+				e.fn.apply(this, e.args);
+			}
+		},
+		setAutoWait:function (timeout){
+			this.autoWait=timeout;
+		},
+		onWaitedForEvent:function (){
+			this.waiting=false;
+			this.eventQueueTimer=setTimeout(this.processQueue, 100); // decouple event handlers
+		},
+		destroy:function (){
+			clearTimeout(this.eventQueueTimer);
+		}
+	});
 	
 	var methods={
 		testFireEvent:function (eventType, selector, eventInfo){
-			var target=$(selector, driver.targetSiteFrame.get(0).contentWindow.document).get(0);
+			var target=$(selector, this.frameMngr.el.get(0).contentWindow.document).get(0);
 			if(target){
 				ok(true, '"'+eventType+'" on '+selector);
-				driver.storage.fireEvent(eventType, target, eventInfo);
+				eventSimulation.fireEvent(eventType, target, eventInfo);
 				return true;
 			}else{
 				ok(false, 'Can not find '+selector+' to fire '+eventType);
@@ -34,10 +169,11 @@
 			}
 		},
 		testWaitForEvent:function (eventType, selector){
-			waiting=true;
-			var target = typeof selector=='string' 
+			this.waiting=true;
+			var player=this,
+				target = typeof selector=='string' 
 							? 
-								$(selector, driver.targetSiteFrame.get(0).contentWindow.document)
+								$(selector, this.frameMngr.el.get(0).contentWindow.document)
 							:
 								typeof selector=='function' 
 									?
@@ -47,15 +183,16 @@
 							;
 			target.one(eventType, function (){
 				ok(true, '"'+eventType+'" on '+(typeof selector=='string' ? selector : target));
-				onWaitedForEvent();
+				player.onWaitedForEvent();
 			});
 		},
 		waitCheckInterval:function (cb, delay){
-			waiting=true;
+			this.waiting=true;
+			var player=this;
 			var t=setInterval(function (){
 				if(cb()){
 					clearInterval(t);
-					onWaitedForEvent();
+					player.onWaitedForEvent();
 				}
 			}, delay);
 		},
@@ -63,130 +200,56 @@
 			cb();
 		},
 		wait:function (timeout){
-			waiting=true;
+			this.waiting=true;
 			if(timeout)
-				setTimeout(onWaitedForEvent, timeout);
-			return onWaitedForEvent;
+				setTimeout(this.onWaitedForEvent, timeout);
+			return this.onWaitedForEvent;
 		},
-		setAjaxRequestId:function (reqId){
-			ajaxRequestIds.push(reqId);
+		/**
+		 * TO-DO: rename to expectAjaxRequestId
+		 * DONE!!!
+		 */
+		expectAjaxRequest:function (reqId){
+			this.ajaxRequestIds.push(reqId);
 		},
-		completeAjaxRequest:function (cfg){
-			if(mockAjaxResponses && runningAjaxRequests[cfg.ajaxRequestId]){
-				var req=runningAjaxRequests[cfg.ajaxRequestId];
-				delete runningAjaxRequests[cfg.ajaxRequestId];
-				req.callback(cfg.status, cfg.statusText, {text:cfg.responseText});
+		/**
+		 * TO-DO: implement expectAjaxRequest (to replace setAjaxRequestId) and make it configurable so it can complete the request automatically without
+		 * a need for completeAjaxRequest. Possible parameters: (Object) resp - Response configuration object;
+		 * (Number) autoRespond - time in milliseconds to delay the response ( -1 may make it not respond );
+		 * (Object) req - the request parameters to match against;
+		 * (Boolean) once - whether to discard the entry after the first matched request or keep serving subsequent requests;
+		 */
+		completeAjaxRequest:function (cfg){  console.log('completeAjaxRequest ('+cfg.ajaxRequestId+')'); console.log(JSON.stringify(this.ajax.runningAjaxRequests))
+			if(this.mockAjaxResponses){
+				if(this.ajax.runningAjaxRequests[cfg.ajaxRequestId]){
+					console.log('completeAjaxRequest '+cfg.ajaxRequestId)
+					var req=this.ajax.runningAjaxRequests[cfg.ajaxRequestId];
+					delete this.ajax.runningAjaxRequests[cfg.ajaxRequestId];
+					req.callback(cfg.status, cfg.statusText, {text:cfg.responseText});
+					ok(true, 'completed AJAX request '+cfg.ajaxRequestId);
+				}else
+					ok(false, 'trying to complete AJAX request '+cfg.ajaxRequestId+' but it\'s not been fired yet');
 			}
 		},
 		mockAjaxResponses:function (mock){
-			mockAjaxResponses = mock!==false ;
+			this.mockAjaxResponses = mock!==false ;
 		}
 	};
-	var tmp={};
-	function addWaitingCheck(fn){
-		return function (){
-			if(autoWait)
-				wait(autoWait);
-			if(waiting){
-				eventQueue.push({
-					fn:fn,
-					args:arguments
+	
+	$.extend(exports, {
+		createPlayer:function (frameMngr, cb){
+			var obj;
+			if(EventEmitter){
+				obj=new Player({frameMngr:frameMngr});
+				cb&&setTimeout(function (){
+					cb(obj);
+				}, 15);
+				return obj;
+			}else if(cb)
+				cbs.push(function (){
+					cb(new Player({frameMngr:frameMngr}));
 				});
-			}else{
-				return fn.apply(this, arguments);
-			}
-		};
-	}
-	
-	/**
-	 * TO-DO: instead of adding all these to the window object consider using something like the "fancy metaprogramming learned from 
-	 * the formidable Yehuda Katz" in Screw.Unit - rebuilding the test functions inside with(){} blocks. But this must be made
-	 * somewhere in the adaptor object.
-	 */
-	for(var m in methods){
-		if(m=='wait'){ // wait returns onWaitedForEvent and addWaitingCheck will block this if waiting==true
-			window.wait=(function (fn){
-				return function (){
-					if(waiting){
-						eventQueue.push({
-							fn:fn,
-							args:arguments
-						});
-						return onWaitedForEvent;
-					}else{
-						return fn.apply(this, arguments);
-					}
-				};
-			}(methods[m]));
-		}else
-			window[m] = addWaitingCheck(methods[m]);
-	}
-	methods=tmp;
-	tmp=null;
-	
-	window.setAutoWait=function (timeout){
-		autoWait=timeout;
-	};
-	
-//	function ajaxSend(event, jqXHR, ajaxOptions){ ajaxOptions.__ajax_request_id__ = driver.storage.ReplayPageEvents.ajax.getRequestId(); }
-	function ajaxSuccess(event, jqXHR, ajaxSettings){
-		driver.storage.ReplayPageEvents.ajax.ajaxEventEmitter.trigger("success", [jqXHR, ajaxSettings]);
-	}
-	function ajaxError(event, jqXHR, ajaxSettings, thrownError){
-		driver.storage.ReplayPageEvents.ajax.ajaxEventEmitter.trigger("error", [jqXHR, ajaxSettings, thrownError]);
-	}
-
-	driver.storage.ReplayPageEvents={
-		initialize:function (){
-			waiting=false;
-			autoWait=0;
-			eventQueue=[];
-			ajaxRequestIds=[];
-			mockAjaxResponses=false;
-			runningAjaxRequests={};
-		},
-		ajax:{
-			getRequestId:function (){
-				return ajaxRequestIds.shift();
-			},
-			ajaxEventEmitter:new EventEmitter(),
-			attachDocumentListeners:function (){
-				var win=driver.targetSiteFrame.get(0).contentWindow;
-				if(!win.ajaxListenersAttached){
-					win.$(win.document)
-//						.ajaxSend(ajaxSend)
-						.ajaxSuccess(ajaxSuccess)
-						.ajaxError(ajaxError);
-					// try to register this as the first selected transport for all types
-					win.$.ajaxTransport( "+json +text +html +*", function( options, originalOptions, jqXHR ) {
-						if(mockAjaxResponses){
-							var req={
-								send:function ( headers, callback ){
-									var ajaxRequestId=driver.storage.ReplayPageEvents.ajax.getRequestId();
-									options.__ajax_request_id__ = ajaxRequestId;
-									runningAjaxRequests[ajaxRequestId]=req;
-									req.callback=callback;
-								},
-								abort:function (){
-									delete runningAjaxRequests[options.__ajax_request_id__];
-								}
-							};
-							return req;
-						}
-					});
-					win.ajaxListenersAttached=true;
-				}
-			},
-			detachDocumentListeners:function (){
-				var win=driver.targetSiteFrame.get(0).contentWindow;
-				win.$(win.document)
-//					.unbind('ajaxSend', ajaxSend)
-					.unbind('ajaxSuccess', ajaxSuccess)
-					.unbind('ajaxError', ajaxError);
-				win.ajaxListenersAttached=false;
-			}
 		}
-	};
+	});
 
-	
-}());
+});

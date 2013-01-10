@@ -27,18 +27,18 @@
 	 * which ensures the library receives proper input and test output is sent to the environment. This way the rules for
 	 * writing a test are those of the library and nothing else.
 	 */
-	window.BrowserDriver.Driver=new EventEmitter({
+	window.BrowserDriver.Driver=new Object({ //EventEmitter
 		initialize:function (){
 			this.targetSiteFrame=$('iframe[name=targetSite]');
-			/**
-			 * @property	{Object}	adaptor	The adaptor object must have initialize() method which will be called when the driver initializes.
-			 */
-			if(this.adaptor)
-				this.adaptor.initialize();
+//			/**
+//			 * @property	{Object}	adaptor	The adaptor object must have initialize() method which will be called when the driver initializes.
+//			 */
+//			if(this.adaptor)
+//				this.adaptor.initialize();
 			this.initialized=true;
 		},
 		runNextBrowserTest:function (){
-			if(this.testsQueue.length && !this.runningTest && !this.storage.loadingLibs){
+			if(this.testsQueue.length && !this.runningTest && !this.storage.loadingLibs && !this.storage.loadingModules){
 				var t=this.testsQueue[0];
 				if(t.fileName in this.testSources){ // the SCRIPT either has been loaded or is now loading
 					console.log('running: '+t.name+' in '+t.fileName);
@@ -142,7 +142,7 @@
 	         * @param {BrowserDriver.Driver} this
 	         * @param {Object}	testData
 	         */
-			driver.trigger('testRead', [testData]);
+			driver.emit('testRead', testData);
 			
 			// check if we are waiting for the next test to load
 			if(!driver.runningTest && driver.testsQueue.length && testsMatch(driver.testsQueue[0], testData))
@@ -153,14 +153,14 @@
 		 * Remove all cached data for tests, loaded user libraries and stylesheets.
 		 */
 		reset:function (){
-			for(var l in this.testSources)
-				if(this.testSources[l].contents)
-					$(this.testSources[l].contents).remove();
+//			for(var l in this.testSources)
+//				if(this.testSources[l].contents)
+//					$(this.testSources[l].contents).remove();
 			this.testSources={};
 			this.testCache.splice(0, this.testCache.length);
-			for(var l in this.userLibs)
-				if(this.userLibs[l].contents)
-					$(this.userLibs[l].contents).remove();
+//			for(var l in this.userLibs)
+//				if(this.userLibs[l].contents)
+//					$(this.userLibs[l].contents).remove();
 			this.userLibs={};
 			for(var l in this.storage.userStylesheets)
 				if(this.storage.userStylesheets[l])
@@ -175,7 +175,7 @@
 	         * Fires after the environment has been reset.
 	         * @param {BrowserDriver.Driver} this
 	         */
-			this.trigger('reset');
+			this.emit('reset');
 		},
 		/**
 		 * @property	{Object} testSources
@@ -203,8 +203,7 @@
 
 					driver.storage.userStylesheets[src]=link;
 
-					src = 'http://'+driver.storage.urlParams.socketIOServerHost
-								+':'+driver.storage.urlParams.socketIOServerPort
+					src = driver.storage.socketIOServerLocation
 								+'/manager/tests/lib/'
 								+src+'?cb='+(new Date()).getTime();
 
@@ -245,12 +244,17 @@
 				script.onreadystatechange=function(){
 					if(script.readyState == 'complete' || script.readyState == 'loaded'){
 						script.onreadystatechange=null;
+						$(script).remove();
 						if(cb)
 							cb();
 					}
 				};
-			else if(cb)
-				$(script).one('load', cb);
+			else
+				$(script).one('load', function (){
+					$(script).remove();
+					if(cb)
+						cb()
+				});
 				
 			head.appendChild(script);
 			
@@ -267,31 +271,30 @@
 					lib+='.js';
 				if(!(lib in driver.userLibs)){
 					driver.storage.loadingLibs=true;
-					var src = 'http://'+driver.storage.urlParams.socketIOServerHost
-									+':'+driver.storage.urlParams.socketIOServerPort
+					var src = driver.storage.socketIOServerLocation
 									+'/manager/tests/lib/'
 									+lib+'?cb='+(new Date()).getTime();
 					driver.userLibs[lib]={
-						contents:driver.attachScript(src, function (){
-							delete driver.userLibs[lib].loading;
-							var loading=false;
-							for(var l in driver.userLibs)
-								if(driver.userLibs[l].loading){
-									loading=true;
-									break;
-								}
-							if(!loading)
-								delete driver.storage.loadingLibs;
-					        /**
-					         * @event loadLib
-					         * Fires after a user library's SCRIPT tag has been loaded.
-					         * @param {BrowserDriver.Driver} this
-					         * @param {String}	lib
-					         */
-							driver.trigger('loadLib', [lib]);
-						}),
 						loading:true
 					};
+					driver.attachScript(src, function (){
+						delete driver.userLibs[lib].loading;
+						var loading=false;
+						for(var l in driver.userLibs)
+							if(driver.userLibs[l].loading){
+								loading=true;
+								break;
+							}
+						if(!loading)
+							delete driver.storage.loadingLibs;
+				        /**
+				         * @event loadLib
+				         * Fires after a user library's SCRIPT tag has been loaded.
+				         * @param {BrowserDriver.Driver} this
+				         * @param {String}	lib
+				         */
+						driver.emit('loadLib', lib);
+					});
 				}
 			}
 		},
@@ -302,50 +305,58 @@
 		 * @param	{String}	src	The path of the test file relative to the "testsPath" property in the test configuration file.
 		 */
 		loadTestSource:function (src){
-			if(src in driver.testSources)
-				$(driver.testSources[src].contents).remove();
 	        /**
 	         * @event beforeLoadTestSource
 	         * Fires before a SCRIPT tag is inserted into the DOM. Returning false from a handler will abort the operation.
 	         * @param {BrowserDriver.Driver} this
 	         * @param {String}	src
 	         */
-			if(driver.trigger('beforeLoadTestSource', [src])!==false)
-				driver.testSources[src]={
-					contents:driver.attachScript('http://'+driver.storage.urlParams.socketIOServerHost
-														+':'+driver.storage.urlParams.socketIOServerPort
-														+'/manager/tests/sources/'
-														+src+'?cb='+(new Date()).getTime())
-				};
+			if(driver.emit('beforeLoadTestSource', src)!==false)
+				this.doLoadTestSource(src);
+		},
+		// this can be overridden
+		doLoadTestSource:function (src){
+			driver.testSources[src]={};
+			driver.attachScript(driver.storage.socketIOServerLocation
+												+'/manager/tests/sources/'
+												+src+'?cb='+(new Date()).getTime())
 		},
 		/**
 		 * @property	{Array} testsQueue
 		 * The list of scheduled tests.
 		 */
 		testsQueue:[],
-		socket:null
+		socket:null,
+		util:{
+			toAbsoluteUrl:function (url, baseUrl){
+				if(/^\w+:\/\//.test(url)) // if already absolute
+					return url;	// return it as is
+				else if(url.charAt(0)=='/') // if relative to root
+					return baseUrl.match(/^\w+:\/\/[^\/]+/)[0]+url;	//	prepend the host of the base url
+				else	// must be relative
+					return baseUrl.match(/^\w+:\/\/[^\/]+[^#\?]*\//)[0]+url;
+			}
+		}
 	});
-	
-	window.driver=window.BrowserDriver.Driver;
 
+	window.driver=window.BrowserDriver.Driver;
+	
 }(jQuery));
 
-if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded in the manager app
+//if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded in the manager app
 	$(document).ready(function (){
 		// get url parameters
-		driver.storage.urlParams={};
+//		driver.storage.urlParams={};
+		var urlParams={};
 		
 		var parts=window.location.search.substring(1).split('&');
 		for(var i=0; i<parts.length; i++){
 			var p=parts[i].split('=');
 			if(p.length==2)
-				driver.storage.urlParams[p[0]]=p[1];
+				urlParams[p[0]]=p[1];
 		}
 		
-		driver.bind('loadLib', function (obj, lib){
-			if(!driver.storage.loadingLibs && this.testsQueue.length)
-				driver.runNextBrowserTest();
-		});
+		driver.storage.socketIOServerLocation=urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort;
 		
 		var log=function (msg){console.log(msg)};
 		function closeWindow(msg){
@@ -361,7 +372,7 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 		function startSocketIO(){
 			if('io' in window){
 				clearInterval(interval);
-				driver.socket=io.connect(driver.storage.urlParams.socketIOServerProtocol+'://'+driver.storage.urlParams.socketIOServerHost, {port:driver.storage.urlParams.socketIOServerPort, rememberTransport:false});
+				driver.socket=io.connect(urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost, {port:urlParams.socketIOServerPort, rememberTransport:false});
 				driver.socket.on('connect', onConnect);
 				driver.socket.on('message', onMessage);
 				driver.socket.on('reconnect_failed', function (){
@@ -369,8 +380,28 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 				});
 			}
 		}
-		interval=setInterval(startSocketIO, 500);
 		
+		// this module for now is only used to get access to the module loading system's require() function
+		driver.storage.driverModule=registerModule({
+			url:urlParams.socketIOServerProtocol+'://'+urlParams.socketIOServerHost+':'+urlParams.socketIOServerPort+'/browserDriver',
+			exports:{
+				driver:window.driver
+			}
+		});
+		driver.storage.driverModule.require('./lib/driver', function (module){
+			module.create(driver, function (err, drv){
+	
+				driver=drv;
+				var cb=function (obj, lib){
+		//			if(!driver.storage.loadingLibs && this.testsQueue.length)
+						driver.runNextBrowserTest();
+				};
+				driver.on('loadLib', cb).on('initModules', cb);
+				interval=setInterval(startSocketIO, 500);
+				console.dir(driver);
+			});
+		});
+
 		/**
 		 * TO-DO: implement RMI-style messaging. that should make it easier to sequence messages
 		 */
@@ -378,7 +409,7 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 			log('sending capture message');
 			driver.socket.json.send({
 				id:'capture',
-				browserName:driver.storage.urlParams.browserName
+				slaveName:urlParams.slaveName
 			});
 		}
 		function onMessage(msg){
@@ -390,11 +421,18 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 						else{
 							log('captured');
 							driver.reset();
+							if('appCfg' in msg){
+								driver.storage.appCfg=msg.appCfg;
+								driver.initModules();
+							}
 							if('tests' in msg){
 								driver.testsQueue=msg.tests;
 								driver.runNextBrowserTest();
 							}
 						}
+					break;
+				case 'appCfg':
+						driver.storage.appCfg=msg.appCfg;
 					break;
 				case 'runTests':
 						driver.reset();
@@ -415,7 +453,8 @@ if(!('Manager' in window.BrowserDriver)) // this code should not run if loaded i
 				case 'reset':
 						driver.reset();
 						/**
-						 * TO-DO: try to stop the test runner if it is progreessing with some tests. It may not be possible though as running test code can not be controlled
+						 * TO-DO: try to stop the test runner if it is progreessing with some tests. It may not be possible though 
+						 * as running test code can not be controlled without unloading the JS frame that it runs in (which is most likely the current page)
 						 */
 					break;
 			}

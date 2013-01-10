@@ -1,7 +1,7 @@
 /**
  * downloaded from http://paste.blixt.org/297640
  */
-jQuery.fn.getPath = function () {
+jQuery.fn.getPath = function (noClasNames) {
     if (this.length != 1) throw 'Requires one element.';
 
     var path, node = this;
@@ -13,7 +13,7 @@ jQuery.fn.getPath = function () {
         if (realNode.id) {
             // As soon as an id is found, there's no need to specify more.
             return name + '#' + realNode.id + (path ? '>' + path : '');
-        } else if (realNode.className) {
+        } else if (!noClasNames && realNode.className) {
             name += '.' + realNode.className.split(/\s+/).join('.');
         }
 

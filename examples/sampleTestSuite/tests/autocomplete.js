@@ -1,123 +1,116 @@
-//driver.loadLib("recordPageEvents/replayPageEvents");
-//asyncTest("auto-generated-test", function (){
-//	var test=this;
-//
-//	expect(18)
-//
-//	testFireEvent("click", "html>body>ul>li:eq(1)>a");
-//	testWaitForEvent("load", driver.targetSiteFrame);
-//	testFireEvent("click", "input#tags");
-//	testFireEvent("keydown", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keypress", "input#tags", {"keyCode":0,"charCode":106,"which":106,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keyup", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
-//	testFireEvent("click", "input#tags");
-//	testFireEvent("click", "input#tags");
-//	testFireEvent("dblclick", "input#tags");
-//	testFireEvent("keydown", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keypress", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keyup", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keydown", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keypress", "input#tags", {"keyCode":0,"charCode":106,"which":106,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("keyup", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-//	testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
-//
-//	execCb(function (){
-//		ok(true, "complete");
-//		start();
-//	});
-//});
-
-driver.loadLib("util");
-driver.loadLib("recordPageEvents/replayPageEvents");
+module('jQueryUI', {
+	setup:function (){
+		console.log('module setup for '+this.__testInst.name);
+		var env=this;
+		this.__testInst.requireCustomLib(['util', 'recordPageEvents/replayPageEvents', 'frameMngr'], function (exportsList){
+			env.testUtils=exportsList[0];
+			var waitFn=env.__testInst.waitForSetup();
+			env.frameMngr=exportsList[2].createFrame(function (frameMngr){
+				frameMngr.el.css({border:0, width:'100%', height:'100%'});
+				env.player=exportsList[1].createPlayer(frameMngr, function (player){
+					env.player=player;
+					waitFn();
+				});
+			});
+		});
+	},
+	teardown:function (){
+		console.log('module teardown for '+this.__testInst.name);
+		this.player.frameMngr.el.remove();
+		this.player.destroy();
+	}
+});
 asyncTest("Autocomplete", 32, function (){
-	var test=this;
+	var test=this,
+		p=this.player,
+		testUtils=this.testUtils,
+		frameEl=p.frameMngr.el;
 
-	driver.storage.ReplayPageEvents.initialize();
+	p.initialize();
 
-	testUtils.setPath('/public_html/jqueryui/index.html', ok); // load the index page
-	testWaitForEvent("load", driver.targetSiteFrame);
-	testFireEvent("click", "html>body>ul>li:eq(1)>a");
-	testWaitForEvent("load", driver.targetSiteFrame);
+	testUtils.setPath(frameEl, '/public_html/jqueryui/index.html', ok); // load the index page
+	p.testWaitForEvent("load", frameEl);
+	p.testFireEvent("click", "html>body>ul>li:eq(1)>a");
+	p.testWaitForEvent("load", frameEl);
 	
-	wait(1000);
-//	testFireEvent("mouseover", "input#tags");
-//	testFireEvent("mousedown", "input#tags");
-//	testFireEvent("click", "input#tags");
-//	testFireEvent("mouseout", "input#tags");
-	execCb(function (){
-		testUtils.$('input#tags').get(0).focus();
+	p.wait(1000);
+//	p.testFireEvent("mouseover", "input#tags");
+//	p.testFireEvent("mousedown", "input#tags");
+//	p.testFireEvent("click", "input#tags");
+//	p.testFireEvent("mouseout", "input#tags");
+	p.execCb(function (){
+		testUtils.$(frameEl, 'input#tags').get(0).focus();
 		if($.browser.webkit || $.browser.msie) // the "keypress" event will not fire correctly in Chrome so add the character now
-			testUtils.$('input#tags').val('j');
+			testUtils.$(frameEl, 'input#tags').val('j');
 	});
-	testFireEvent("keydown", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keypress", "input#tags", {"keyCode":106,"charCode":106,"which":106,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keyup", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	wait(1000);
-	testFireEvent("mouseover", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
-	wait(1000);
-	testFireEvent("mousedown", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
-	testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
-//	testFireEvent("mouseout", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
-	wait(1000);
-	execCb(function (){
-		equal(testUtils.$('input#tags').val(), 'Java', 'Java was selected');
+	p.testFireEvent("keydown", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keypress", "input#tags", {"keyCode":106,"charCode":106,"which":106,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keyup", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.wait(1000);
+	p.testFireEvent("mouseover", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
+	p.wait(1000);
+	p.testFireEvent("mousedown", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
+	p.testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
+//	p.testFireEvent("mouseout", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(1)>a.ui-corner-all");
+	p.wait(1000);
+	p.execCb(function (){
+		equal(testUtils.$(frameEl, 'input#tags').val(), 'Java', 'Java was selected');
 	});
-//	testFireEvent("click", "input#tags");
-//	testFireEvent("click", "input#tags");
-//	execCb(function (){
+//	p.testFireEvent("click", "input#tags");
+//	p.testFireEvent("click", "input#tags");
+//	p.execCb(function (){
 //		testUtils.$('input#tags').get(0).focus();
 //	});
-//	testFireEvent("dblclick", "input#tags");
-	execCb(function (){
-		testUtils.$('input#tags').get(0).focus();
-		testUtils.$('input#tags').get(0).select();
+//	p.testFireEvent("dblclick", "input#tags");
+	p.execCb(function (){
+		testUtils.$(frameEl, 'input#tags').get(0).focus();
+		testUtils.$(frameEl, 'input#tags').get(0).select();
 		if($.browser.webkit || $.browser.msie) // the "keypress" event will not fire correctly in Chrome so add the character now
-			testUtils.$('input#tags').val('j');
+			testUtils.$(frameEl, 'input#tags').val('j');
 	});
-	wait(1000);
-	testFireEvent("keydown", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keypress", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keyup", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keydown", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keypress", "input#tags", {"keyCode":106,"charCode":106,"which":106,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keyup", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	wait(1000);
-	testFireEvent("mouseover", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
-	wait(1000);
-	testFireEvent("mousedown", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
-	testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
-//	testFireEvent("mouseout", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
-	wait(1000);
-	execCb(function (){
-		equal(testUtils.$('input#tags').val(), 'Javascript', 'Javascript was selected');
+	p.wait(1000);
+	p.testFireEvent("keydown", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keypress", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keyup", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keydown", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keypress", "input#tags", {"keyCode":106,"charCode":106,"which":106,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keyup", "input#tags", {"keyCode":74,"charCode":0,"which":74,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.wait(1000);
+	p.testFireEvent("mouseover", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
+	p.wait(1000);
+	p.testFireEvent("mousedown", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
+	p.testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
+//	p.testFireEvent("mouseout", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(2)>a.ui-corner-all");
+	p.wait(1000);
+	p.execCb(function (){
+		equal(testUtils.$(frameEl, 'input#tags').val(), 'Javascript', 'Javascript was selected');
 	});
 
-	execCb(function (){
-		testUtils.$('input#tags').get(0).focus();
-		testUtils.$('input#tags').get(0).select();
+	p.execCb(function (){
+		testUtils.$(frameEl, 'input#tags').get(0).focus();
+		testUtils.$(frameEl, 'input#tags').get(0).select();
 		if($.browser.webkit || $.browser.msie) // the "keypress" event will not fire correctly in Chrome so add the character now
-			testUtils.$('input#tags').val('p');
+			testUtils.$(frameEl, 'input#tags').val('p');
 	});
-	wait(1000);
-	testFireEvent("keydown", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keypress", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keyup", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keydown", "input#tags", {"keyCode":80,"charCode":0,"which":80,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keypress", "input#tags", {"keyCode":112,"charCode":112,"which":112,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	testFireEvent("keyup", "input#tags", {"keyCode":80,"charCode":0,"which":80,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
-	wait(1000);
-	testFireEvent("mouseover", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
-	wait(1000);
-	testFireEvent("mousedown", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
-	testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
-//	testFireEvent("mouseout", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
-	wait(1000);
-	execCb(function (){
-		equal(testUtils.$('input#tags').val(), 'ActionScript', 'ActionScript was selected');
+	p.wait(1000);
+	p.testFireEvent("keydown", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keypress", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keyup", "input#tags", {"keyCode":8,"charCode":0,"which":8,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keydown", "input#tags", {"keyCode":80,"charCode":0,"which":80,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keypress", "input#tags", {"keyCode":112,"charCode":112,"which":112,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.testFireEvent("keyup", "input#tags", {"keyCode":80,"charCode":0,"which":80,"shiftKey":false,"metaKey":false,"ctrlKey":false,"altKey":false});
+	p.wait(1000);
+	p.testFireEvent("mouseover", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
+	p.wait(1000);
+	p.testFireEvent("mousedown", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
+	p.testFireEvent("click", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
+//	p.testFireEvent("mouseout", "html>body>ul.ui-autocomplete.ui-menu.ui-widget.ui-widget-content.ui-corner-all>li.ui-menu-item:eq(0)>a.ui-corner-all");
+	p.wait(1000);
+	p.execCb(function (){
+		equal(testUtils.$(frameEl, 'input#tags').val(), 'ActionScript', 'ActionScript was selected');
 	});
 
-	execCb(function (){
+	p.execCb(function (){
 		ok(true, "complete");
 		start();
 	});
