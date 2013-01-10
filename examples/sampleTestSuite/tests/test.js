@@ -1,4 +1,4 @@
-module('test tests', {
+module('non-UI tests', {
 	setup:function (){
 		console.log('module setup for '+this.__testInst.name);
 		var env=this;
@@ -22,7 +22,7 @@ test('test ...', 1, function (){
 });
 asyncTest('async test ...', 1, function (){
 	setTimeout(function(){
-		ok(true, 'successfull asyncTest');
+		ok(true, 'successful asyncTest');
 		start();
 	}, 15);
 });
