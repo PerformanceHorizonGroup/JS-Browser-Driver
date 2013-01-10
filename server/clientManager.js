@@ -10,7 +10,7 @@ var util = require('./lib/util'),
 	extend=require('./lib/other/jquery.extend');
 
 /**
- * @class BrowserManager
+ * @class ClientManager
  * @extends	events.EventEmitter
  * @private
  * Maintains the connections with slaves and managers. Mostly relays messages from the manager application 
@@ -93,7 +93,7 @@ util.extend(mngr, {
 //				    /**
 //				     * @event beforeSendCaptureMessage
 //				     * Fires when a message has been received.
-//				     * @param {BrowserManager} this
+//				     * @param {ClientManager} this
 //				     * @param {Object}	client
 //				     * @param {Object}	msg
 //				     */
@@ -128,7 +128,7 @@ util.extend(mngr, {
         /**
          * @event message
          * Fires when a message has been received.
-         * @param {BrowserManager} this
+         * @param {ClientManager} this
          * @param {Object}	client
          * @param {Object}	msg
          */
