@@ -53,11 +53,11 @@ var host,
 			testsPath:'tests', // path to be searched for *.js files which should have the tests. must be relative to the config file path
 			userLibsPath:'lib', // must be relative to the config file path
 			testsUrl:'/manager/tests/sources',
-			userLibsUrl:'/manager/tests/lib'
+			userLibsUrl:'/manager/tests/lib',
+			autoRunTests:[] // a list of tests to run automatically on startup
 		}],	// modules that the server needs to load
 		
 		interactiveMode:false, // if false then load tests from "autoRunTests" and run them in all slaves starting up those specified in "autoRunSlaves". can be overridden with command-line arguments
-		autoRunTests:[], // a list of tests to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
 		autoRunSlaves:[], // a list of slaves to run automatically on startup (only with interactiveMode:false ). can be overridden with command-line arguments
 		
 		configFileName:__dirname+'/server.conf.json', // it's pointless to set this in a config file ;-) . shall be overridden with command-line arguments
@@ -103,19 +103,20 @@ function startServer(cfgOverrides){
 				cfg.interactiveMode= arg[1]=='true';
 			else if(arg=processArguments[i].match(/^timeout=(\d+)/))
 				cfg.timeout=Number(arg[1]);
-			else if(arg=processArguments[i].match(/^test=(.*)/)){
-				/**
-				 * TO-DO: support the option to run all tests without enumerating them all
-				 */
-				arg=arg[1].match(/^'(.*)'\.'(.*)'\.'(.*)'$/); // format: 'filename.js'.'moduleName'.'testName'
-				if(arg){
-					cfg.autoRunTests.push({
-						name:arg[3],
-						module:arg[2],
-						fileName:arg[1]
-					});
-				}
-			}else if(arg=processArguments[i].match(/^autoRunSlaves=(.*)/)){
+//			else if(arg=processArguments[i].match(/^test=(.*)/)){
+//				/**
+//				 * TO-DO: support the option to run all tests without enumerating them all
+//				 */
+//				arg=arg[1].match(/^'(.*)'\.'(.*)'\.'(.*)'$/); // format: 'filename.js'.'moduleName'.'testName'
+//				if(arg){
+//					cfg.autoRunTests.push({
+//						name:arg[3],
+//						module:arg[2],
+//						fileName:arg[1]
+//					});
+//				}
+//			}
+			else if(arg=processArguments[i].match(/^autoRunSlaves=(.*)/)){
 				/**
 				 * TO-DO: support the option to run all slaves without enumerating them all
 				 */
@@ -179,34 +180,34 @@ function startServer(cfgOverrides){
 			}, cfg.timeout*1000);
 			
 		if(!cfg.interactiveMode){
-			webServer.browserManager.on('message', function (client, msg){
-				if(msg.id=='onTestDone'){
-					console.log('test on '+client.name+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
-				}else if(msg.id=='onAllTestsDone'){
-					for(var b in this.slaves) // check if there are tests left in any slave
-						if(this.slaves[b].testsQueue.length)
-							return;
-					
-					for(var i=0; i<cfg.autoRunSlaves.length; i++)
-						this.disconnectSlave(cfg.autoRunSlaves[i]);
-					console.log('all tests complete. shutting down');
-					process.exit(); // this may not be a good idea if loaded as a module. might emit some event instead.
-				}
-			});
-			webServer.browserManager.on('testDone', function (msg){
-				console.log('test on '+msg.slaveName+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
-			});
-			// schedule given tests for all slaves
-			for(var b=0; b<cfg.slaves.length; b++){
-				webServer.browserManager.runTests(webServer.browserManager.slaves[cfg.slaves[b].name], cfg.autoRunTests.slice(0));
-				
-				// check if this slave must be automatically run
-				for(var i=0; i<cfg.autoRunSlaves.length; i++)	
-					if(cfg.slaves[b].name==cfg.autoRunSlaves[i]){
-						webServer.browserManager.runSlave(cfg.autoRunSlaves[i]);
-						break;
-					}
-			}
+//			webServer.browserManager.on('message', function (client, msg){
+//				if(msg.id=='onTestDone'){
+//					console.log('test on '+client.name+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
+//				}else if(msg.id=='onAllTestsDone'){
+//					for(var b in this.slaves) // check if there are tests left in any slave
+//						if(this.slaves[b].testsQueue.length)
+//							return;
+//					
+//					for(var i=0; i<cfg.autoRunSlaves.length; i++)
+//						this.disconnectSlave(cfg.autoRunSlaves[i]);
+//					console.log('all tests complete. shutting down');
+//					process.exit(); // this may not be a good idea if loaded as a module. might emit some event instead.
+//				}
+//			});
+//			webServer.browserManager.on('testDone', function (msg){
+//				console.log('test on '+msg.slaveName+': '+msg.name+' '+msg.failed+', '+msg.passed+', '+msg.total);
+//			});
+//			// schedule given tests for all slaves
+//			for(var b=0; b<cfg.slaves.length; b++){
+//				webServer.browserManager.runTests(webServer.browserManager.slaves[cfg.slaves[b].name], cfg.autoRunTests.slice(0));
+//				
+//				// check if this slave must be automatically run
+//				for(var i=0; i<cfg.autoRunSlaves.length; i++)	
+//					if(cfg.slaves[b].name==cfg.autoRunSlaves[i]){
+//						webServer.browserManager.runSlave(cfg.autoRunSlaves[i]);
+//						break;
+//					}
+//			}
 		}
 	});
 }

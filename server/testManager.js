@@ -88,7 +88,7 @@ function TestManager(cfg){
 
 	for(var b=0, slaves=appCfg.slaves; b<slaves.length; b++)
 		this.clientManager.addSlave(extend({
-			testsQueue:appCfg.autoRunTests.slice(0)
+			testsQueue:this.autoRunTests.slice(0)
 		}, slaves[b]));
 }
 require('util').inherits(TestManager, require('events').EventEmitter);
