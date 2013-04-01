@@ -16,6 +16,13 @@ registerModule(function (module, require){
 		});
 	});
 	
+	function encodeStringParameter(str){
+		return str.replace(/\\/g, '\\\\')	// escape all escaping characters
+					.replace(/'/g, '\\')	// escape single quotes
+					.replace(/\r/g, '')	// escape new-lines
+					.replace(/\n/g, '\\n');	// escape new-lines
+	}
+	
 	function ControlPanel(cfg){
 		$.extend(true, this, cfg); //		EventEmitter.call(this, arguments);
 		this.initialize();
@@ -48,6 +55,7 @@ registerModule(function (module, require){
 						'<div class="recording-options">' +
 							'<label class="form-inline"><input type="checkbox" class="record-ajax-data"> Record AJAX data</label>' +
 							'<label class="form-inline"><input type="checkbox" class="mock-server-side"> Mock the server side</label>' +
+							'<label class="form-inline"><input type="checkbox" class="mock-html"> Mock HTML</label>' +
 							'<label class="form-inline"><input type="checkbox" class="record-hvoer-events"> Record <em>hover</em> events</label>' +
 						'</div>' +
 						'<div class="recording-tools">' +
@@ -103,6 +111,9 @@ registerModule(function (module, require){
 			this.recordingOptions={
 				recordHoverEvents:$('.record-hover-events').is(':checked'),
 				recordAjaxData:$('.record-ajax-data').is(':checked'),
+				mockHTML:$('.mock-html').is(':checked')?{
+						sourceRequests:[]
+					}:false,
 				mockServerSide:$('.mock-server-side').is(':checked')
 			};
 			$('.generate-test-code').attr('disabled', 'true');
@@ -166,13 +177,31 @@ registerModule(function (module, require){
 		onPageLoad:function (evt){
 			if(this.recording){ // if we are already recording then document listeners have not been attached as the page just loaded
 				this.attachDocumentListeners();
-				this.eventsList.append('<div>pageLoad</div>');
-				this.recordedEvents.push({
-					evt:{
-						type:'pageLoad'
-					},
-					time:new Date()
-				});
+				var url=this.frameMngr.el.get(0).contentWindow.location.href,
+					pageLoadEvt={
+						evt:{
+							type:'pageLoad',
+							url:url
+						},
+						time:new Date()
+					};
+				this.eventsList.append('<div>pageLoad - '+url+'</div>');
+				this.recordedEvents.push(pageLoadEvt);
+				if(this.recordingOptions.mockHTML){
+					var panel=this,
+						ajaxId=$.ajax({
+							url:url,
+							success:function (data){
+								pageLoadEvt.evt.html=data;
+							},
+							complete:function (){
+								// remove the ajax id from the list
+								var ind=$.inArray(ajaxId, panel.recordingOptions.mockHTML.sourceRequests);
+								if(ind>-1)
+									panel.recordingOptions.mockHTML.sourceRequests.splice(ind, 1);
+							}
+						});					this.recordingOptions.mockHTML.sourceRequests.push(ajaxId);
+				}
 			}
 		},
 		onAjaxSend:function (event, jqXHR, ajaxOptions){
@@ -332,6 +361,18 @@ registerModule(function (module, require){
 					case 'pageLoad':
 							++expectCount;
 							code.push('p.testWaitForEvent(\'load\', frameEl);');
+							code.push('// url - '+this.recordedEvents[i].evt.url);
+							if(this.recordingOptions.mockHTML){
+				//code.push('frameEl.one("beforePageInit", p.ajax.attachDocumentListeners);');
+								var prevCmd=code[code.length-3];
+								if(typeof prevCmd=='object' && prevCmd.evt.evt.type=='loadUrl'){
+									prevCmd.html=this.recordedEvents[i].evt.html;
+								}else{
+									code.push('p.execCb(function (){');
+									code.push('testUtils.setDocumentHTML(frameEl.get(0).contentWindow.document, \''+encodeStringParameter(this.recordedEvents[i].evt.html)+'\')');
+									code.push('});');
+								}
+							}
 						break;
 					case 'keydown':
 					case 'keyup':
@@ -382,7 +423,20 @@ registerModule(function (module, require){
 							/**
 							 *  TO-DO: remove the "origin" part like "http://site.com:80" 
 							 */
-							code.push('testUtils.setPath(frameEl, \''+this.recordedEvents[i].href+'\', ok);');
+							code.push({
+								evt:this.recordedEvents[i],
+//								cmd:'loadUrl',
+//								href:this.recordedEvents[i].href,
+								toString:function (){
+									var txt='testUtils.setPath(frameEl, ';
+									txt += 'html' in this ?
+												'{\nurl:\''+this.evt.href+'\',\nhtml:\''+encodeStringParameter(this.html)+'\'}'
+											:
+												'\''+this.evt.href+'\'';
+									txt+=', ok);';
+									return txt;
+								}
+							});
 						break;
 				}
 			}
