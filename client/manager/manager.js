@@ -211,4 +211,11 @@ $(document).ready(function (){
 			id:'reloadTests'
 		});
 	});
+	$('.modules-filter').bind('keyup change', function (){
+		var filter=this.value;
+		$('#testsList fieldset.module legend').each(function (){
+			var l=$(this);
+			l.parent()[filter && l.text().indexOf(filter)<0?'addClass':'removeClass']('not-displayed');
+		});
+	});
 });

@@ -18,6 +18,9 @@ h3 {
     padding: 0;
 	font-weight: normal;
 }
+.not-displayed{
+	display:none;
+}
 .wrap {
 	width: 980px;
 	margin: 0 auto;
@@ -93,3 +96,9 @@ fieldset.module{
 fieldset.module legend{
 	margin-bottom:0px;
 }
+
+.modules-filter{
+	vertical-align: bottom;
+	margin-left:20px;
+}
+
