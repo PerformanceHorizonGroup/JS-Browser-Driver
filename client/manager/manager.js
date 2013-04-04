@@ -218,4 +218,9 @@ $(document).ready(function (){
 			l.parent()[filter && l.text().indexOf(filter)<0?'addClass':'removeClass']('not-displayed');
 		});
 	});
+	$('.check-all').change(function (){
+		$('.test-details input').removeAttr('checked').filter(':visible');
+		if(this.checked)
+			$('.test-details input:visible').attr('checked', true);
+	});
 });
