@@ -2,6 +2,7 @@
  * TO-DO: running this in interactive mode and managing it by running commands in the console (for CI integration).
  */
 var path=require('path'),
+	fs=require('fs'),
 	extend=require('./lib/other/jquery.extend'),
 	Connect = require('connect');
 
@@ -85,7 +86,7 @@ function startServer(cfgOverrides){
 
 	if(cfgOverrides)
 		extend(true, cfg, cfgOverrides);
-	path.exists(cfg.configFileName, function (exists){
+	fs.exists(cfg.configFileName, function (exists){
 		if(exists){
 			console.log('reading configuration file '+cfg.configFileName);
 	//		JSON.parse(require('fs').readFileSync(configFileName).toString());

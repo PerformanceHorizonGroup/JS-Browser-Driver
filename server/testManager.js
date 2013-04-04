@@ -67,13 +67,13 @@ function TestManager(cfg){
 	var appCfg=this.clientManager.server.appCfg,
 		Connect=require('connect');
 	this.storage.info.testsBaseDir=path.resolve(path.dirname(appCfg.configFileName), this.testsPath);
-	path.exists(this.storage.info.testsBaseDir, function (exists){
+	fs.exists(this.storage.info.testsBaseDir, function (exists){
 		if(!exists)
 			console.log('[WARNING] testsPath "'+this.storage.info.testsBaseDir+'" does not exist as pointed by "'+this.testsPath+'"');
 	}.scope(this));
 	this.storage.info.testsBaseUrl=this.testsUrl;
 	this.storage.info.userLibsDir=path.resolve(path.dirname(appCfg.configFileName), this.userLibsPath);
-	path.exists(this.storage.info.userLibsDir, function (exists){
+	fs.exists(this.storage.info.userLibsDir, function (exists){
 		if(!exists)
 			console.log('[WARNING] userLibsPath "'+this.storage.info.userLibsDir+'" does not exist as pointed by "'+this.userLibsPath+'"');
 	}.scope(this));
