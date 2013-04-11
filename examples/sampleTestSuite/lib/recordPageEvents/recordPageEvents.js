@@ -4,7 +4,7 @@ registerModule(function (module, require){
 	__adaptor__.attachStylesheet(module.url.replace(/[^\/]*$/, '../bootstrap/css/bootstrap.min.css'));
 	var EventEmitter,
 		cbs=[];
-	require(['../jquery-ui-1.8.16.custom.min', '../jquery.getPath'], function (){
+	require(['../jquery-ui-1.8.16.custom.min', '../jquery.getPath', 'lib/beautify.js'], function (){
 		__adaptor__.requireLib(['events', 'helpers'], function (exportsList){
 			EventEmitter=exportsList[0].EventEmitter;
 			window.recordPageEvents={};
@@ -52,6 +52,7 @@ registerModule(function (module, require){
 						'</div>' +
 						'<div class="recording-tools">' +
 							'<button class="generate-test-code btn btn-primary"><i class="icon-cog icon-white"></i> Generate Test</button>' +
+							'<label class="form-inline"><input type="checkbox" class="beautify-generated-code" checked> beautify generated code</label>' +
 						'</div>' +
 						/**
 						 * TO-DO: add "Auto scroll" option to the events list
@@ -94,7 +95,10 @@ registerModule(function (module, require){
 			$('.generate-test-code').click(function (){
 				$('.recorded-events-list .title', panelEl).html('Generated test code');
 				$('.recorded-events-list', panelEl).show();
-				this.eventsList.empty().append($('<pre></pre>').text(this.generateTestCode()));
+				var code=this.generateTestCode();
+				if($('.beautify-generated-code').is(':checked'))
+					code=js_beautify(code);
+				this.eventsList.empty().append($('<pre></pre>').text(code));
 			}.scope(this));
 			this.eventsList=$('.recorded-events-list .items', panelEl);
 		},
