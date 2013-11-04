@@ -381,6 +381,17 @@ exports.initialize=function (){
 				listeners.push(fn);
 			};
 		}());
+		(function (){
+			var css = 'html, body{ padding:0px; margin:0px; height:100%; }',
+    			style = document.createElement('style');
+			style.type = 'text/css';
+			if (style.styleSheet){
+			  style.styleSheet.cssText = css;
+			} else {
+			  style.appendChild(document.createTextNode(css));
+			}
+			document.getElementsByTagName('head')[0].appendChild(style);
+		}());
 		attachScript(module.url.replace(/[^\/]*$/, '')+'../qunit.js', function (){
 			extend=$.extend;
 			// do this because for now the lib is not loaded in a standard document wich to fire "load"

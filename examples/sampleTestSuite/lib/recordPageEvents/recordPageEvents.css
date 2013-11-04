@@ -12,6 +12,18 @@
 }
 .page-url{
 	width: 250px;
+	vertical-align: top;
+	height: 25px;
+}
+.recording-options, .recording-tools {
+	padding: 5px 10px;
+}
+.recording-options label, .recording-tools label { 
+	display:inline;
+	margin: 10px 0px 10px 10px;
+}
+.recording-options label input, .recording-tools label input { 
+	margin-top:0px;
 }
 .recorded-events-list{
 	display:none;
@@ -34,10 +46,6 @@
 .separator { 
 	color: #999; 
 	padding: 0 5px;
-}
-.browser-control, .recording-options label { 
-	float: left; 
-	margin: 10px 10px 10px 0;
 }
 .test-info, .recording-tools { 
 	clear: left; 

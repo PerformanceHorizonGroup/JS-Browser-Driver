@@ -211,4 +211,16 @@ $(document).ready(function (){
 			id:'reloadTests'
 		});
 	});
+	$('.modules-filter').bind('keyup change', function (){
+		var filter=this.value;
+		$('#testsList fieldset.module legend').each(function (){
+			var l=$(this);
+			l.parent()[filter && l.text().indexOf(filter)<0?'addClass':'removeClass']('not-displayed');
+		});
+	});
+	$('.check-all').change(function (){
+		$('.test-details input').removeAttr('checked').filter(':visible');
+		if(this.checked)
+			$('.test-details input:visible').attr('checked', true);
+	});
 });
