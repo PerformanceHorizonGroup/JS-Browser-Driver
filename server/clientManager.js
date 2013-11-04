@@ -7,7 +7,7 @@ var util = require('./lib/util'),
 	path = require("path"),
 	events=require('events'),
 	sys=require('util'),
-	extend=require('./lib/other/jquery.extend');
+	extend=require('jquery.extend');
 
 /**
  * @class ClientManager

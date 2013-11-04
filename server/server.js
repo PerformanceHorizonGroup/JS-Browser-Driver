@@ -3,7 +3,7 @@
  */
 var path=require('path'),
 	fs=require('fs'),
-	extend=require('./lib/other/jquery.extend'),
+	extend=require('jquery.extend'),
 	Connect = require('connect');
 
 var host, 

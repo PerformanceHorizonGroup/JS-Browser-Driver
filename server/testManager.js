@@ -6,7 +6,7 @@
 var util = require('./lib/util'),
 	fs = require("fs"),
 	path = require("path"),
-	extend=require('./lib/other/jquery.extend'),
+	extend=require('jquery.extend'),
 	asyncFlow=require('../client/lib/asyncFlow');
 
 function testsMatch(t1, t2){

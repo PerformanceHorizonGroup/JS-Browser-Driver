@@ -1,6 +1,6 @@
 {
 	"name":"browser-driver",
-	"version":"0.2.0",
+	"version":"0.3.0",
 	"author":"PHG <techies@performancehorizon.com>",
 	"description":"a server to capture and manage browsers",
 	"contributors":[{
@@ -22,7 +22,8 @@
 	],
 	"dependencies" :{
 	    "connect":"*",
-	    "socket.io":">=0.7.x"
+	    "socket.io":">=0.7.x",
+	    "jquery.extend":"*"
 	},
 	"license":"MIT",
 	"engine":{
