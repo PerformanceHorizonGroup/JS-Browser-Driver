@@ -21,6 +21,8 @@ If you have installed the npm package globally (with `-g`) then you can do:
 or if not then go to the package directory and start it with node like:
 
     node server/server.js configFileName="path/to/xxx.conf.json"
+    
+The `configFileName` option can also be a directory like `path/to` in which case the assumed configuration file name will be `path/to/server.conf.json` or it can be completely omitted and the current working directory will be used. 
 
 ### Setting up the slaves
 Within the conf.json config file, you need to provide an absolute link to each browser. Predictably, this isn't particularly easy as there can be various conflicts with browser windows that are already open. We have gone through this pain many times, so here's a guide for the major browsers:
