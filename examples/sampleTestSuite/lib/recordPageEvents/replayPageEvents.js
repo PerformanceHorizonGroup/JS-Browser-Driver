@@ -181,7 +181,8 @@ registerModule(function (module, require){
 									:
 										selector
 							;
-			target.one(eventType, function (){
+			var methodName = target.one?'one':'once';
+			target[methodName](eventType, function (){
 				ok(true, '"'+eventType+'" on '+(typeof selector=='string' ? selector : target));
 				player.onWaitedForEvent();
 			});
