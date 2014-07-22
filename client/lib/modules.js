@@ -22,13 +22,13 @@
 			loadingQueue.push({url:url, cb:cb});
 		else{
 			var script=document.createElement('SCRIPT'),
-				head=document.head||$('head').get(0);
-			url=url.replace(/\.js$/, '');
-			script.src=url+'.js';
+				head=document.head||$('head').get(0),
+				moduleKey=url.replace(/\.js$/, '');
+			script.src=url;
 	
 			script.type='text/javascript';
 			
-			loadingModule=modules[url];;
+			loadingModule=modules[moduleKey];
 			
 			if($.browser.msie) // no load event in IE so wait for readyState
 				script.onreadystatechange=function(){
@@ -98,7 +98,8 @@
 	var modules={};
 	
 	function requireModuleAtAbsUrl(url, cb){
-		var module=modules[url];
+		var moduleKey=url.replace(/\.js$/, ''),
+			module=modules[moduleKey];
 		if(module){
 			if(module.loading){
 				module.loading.push(function (){
@@ -111,8 +112,8 @@
 					});
 			}
 		}else{
-			module=modules[url]=blankModule({
-				url:url,
+			module=modules[moduleKey]=blankModule({
+				url:moduleKey+'.js',
 				
 				/**
 				 * delete this property when the module loads. Callbacks can be added
@@ -187,8 +188,9 @@
 				return loadingModule;
 			}else{	// "object"
 				fn.url=toAbsoluteUrl(fn.url, window.location.protocol+'//'+window.location.host+window.location.pathname);
-				modules[fn.url]=blankModule(fn);
-				return modules[fn.url];
+				var moduleKey=fn.url.replace(/\.js$/, '');
+				modules[moduleKey]=blankModule(fn);
+				return modules[moduleKey];
 			}
 		}
 	};
