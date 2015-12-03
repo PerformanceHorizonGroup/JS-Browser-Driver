@@ -91,22 +91,24 @@ exports.initialize=function (){
 				nextTick(processSourceFilesQueue);
 			}
 			if(isNodeJS){
-				var vm = require("vm"),
-					fs = require("fs");
-
-				fs.readFile(sourceFilesQueue[0].filePath, function (err, fileData){
-					if(err)
-						console.log('ERR: processSourceFilesQueue failed loading "'+sourceFilesQueue[0].filePath+'": '+err)
-					else{
-//						console.log('runInThisContext '+sourceFilesQueue[0])
-						try{
-							vm.runInThisContext(fileData, sourceFilesQueue[0].filePath);
-						}catch(e){
-							console.log('Exception occured while processing test source: '+e.stack);
-						}
-					}
-					fileProcessed();
-				});
+//				var vm = require("vm"),
+//					fs = require("fs");
+//
+//				fs.readFile(sourceFilesQueue[0].filePath, function (err, fileData){
+//					if(err)
+//						console.log('ERR: processSourceFilesQueue failed loading "'+sourceFilesQueue[0].filePath+'": '+err)
+//					else{
+////						console.log('runInThisContext '+sourceFilesQueue[0])
+//						try{
+//							vm.runInThisContext(fileData, sourceFilesQueue[0].filePath);
+//						}catch(e){
+//							console.log('Exception occured while processing test source: '+e.stack);
+//						}
+//					}
+//					fileProcessed();
+//				});
+				require(sourceFilesQueue[0].filePath);
+				fileProcessed();
 			}else{
 				attachScript(sourceFilesQueue[0].filePath, function (){
 					fileProcessed();
@@ -289,7 +291,7 @@ exports.initialize=function (){
 		});
 
 		// add the test methods to global 
-		extend(globalScope, QUnit.assert, {
+		var QUnitProxy={
 			start:QUnit.start,
 			stop:QUnit.stop,
 			expect:QUnit.expect,
@@ -350,7 +352,10 @@ exports.initialize=function (){
 			},			
 			module:function (name, lifecycle){
 				currentModule=new Module(name, lifecycle);
-			}
+			},
+		};
+		extend(globalScope, QUnit.assert, QUnitProxy, {
+			QUnit:QUnitProxy
 		});
 	}
 	// load the QUnit library
