@@ -114,7 +114,7 @@ registerModule(function (module, require){
 					$('.icon-white', this).removeClass('icon-chevron-up').addClass('icon-chevron-down');
 				else
 					$('.icon-white', this).removeClass('icon-chevron-down').addClass('icon-chevron-up');
-			});
+			}).parent().hide();
 		},
 		startRecording:function (){
 			this.recordedEvents=[];
