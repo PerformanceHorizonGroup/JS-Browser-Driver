@@ -1,4 +1,4 @@
-module('jQueryUI', {
+QUnit.module('jQueryUI', {
 	setup:function (){
 		console.log('module setup for '+this.__testInst.name);
 		var env=this;

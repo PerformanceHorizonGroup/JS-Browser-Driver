@@ -1,5 +1,5 @@
 (function (){
-	module('Record page events', {
+	QUnit.module('Record page events', {
 		setup:function (){
 			console.log('module setup for '+this.__testInst.name);
 			var env=this;

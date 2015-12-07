@@ -1,4 +1,4 @@
-module('non-UI tests', {
+QUnit.module('non-UI tests', {
 	setup:function (){
 		console.log('module setup for '+this.__testInst.name);
 		var env=this;
