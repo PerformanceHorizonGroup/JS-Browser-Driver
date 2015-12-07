@@ -15,7 +15,7 @@
 	vertical-align: top;
 	height: 25px;
 }
-.recording-options, .recording-tools {
+.recording-options, .recording-tools, .playback-tools {
 	padding: 5px 10px;
 }
 .recording-options label, .recording-tools label { 
@@ -49,4 +49,31 @@
 }
 .test-info, .recording-tools { 
 	clear: left; 
+}
+.playback-tools legend{
+	font-size:14px;
+	cursor:pointer;
+	margin-bottom:5px;
+}
+.playback-tools.collapsed legend{
+	border-bottom:0px;
+	margin-bottom:0px;
+}
+.playback-tools legend i.icon-white{
+	background-color: #006dcc;
+	padding: 2px;
+	border-radius: 8px;
+}
+.playback-tools legend i.icon-white.icon-chevron-up{
+	background-position: -286px -119px;
+}
+.playback-tools legend i.icon-white.icon-chevron-down{
+	background-position: -311px -118px;
+}
+.playback-tools.collapsed .tools{
+	display:none;
+}
+.playback-tools .test-source-code{
+	width:100%;
+	min-height:100px;
 }

@@ -1,3 +1,7 @@
+0.3.2 / 2015-12-07
+==================
+	* Allow the configFileName option to be a directory or not be specified at all
+	* vm.runInThisContext() looses the modules functionality (require, module, __dirname, etc.) so now test loading uses require() instead
 0.2.? / 2012-??-??
 ==================
 	* various bug fixes

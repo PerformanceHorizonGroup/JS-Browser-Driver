@@ -54,6 +54,13 @@ registerModule(function (module, require){
 							'<button class="generate-test-code btn btn-primary"><i class="icon-cog icon-white"></i> Generate Test</button>' +
 							'<label class="form-inline"><input type="checkbox" class="beautify-generated-code" checked> beautify generated code</label>' +
 						'</div>' +
+						'<fieldset class="playback-tools collapsed">' +
+							'<legend class="form-inline show-play-controls"><i class="icon-chevron-down icon-white"></i> Run test code </legend>' +
+							'<div class="tools">' +
+								'<textarea class="test-source-code"></textarea>' +
+								'<button class="play-test-code btn btn-primary"><i class="icon-cog icon-white"></i> Run Test Code</button>' +
+							'</div>' +
+						'</fieldset>' +
 						/**
 						 * TO-DO: add "Auto scroll" option to the events list
 						 */
@@ -101,6 +108,13 @@ registerModule(function (module, require){
 				this.eventsList.empty().append($('<pre></pre>').text(code));
 			}.scope(this));
 			this.eventsList=$('.recorded-events-list .items', panelEl);
+			$('.playback-tools>legend', panelEl).click(function (){
+				$(this).parent().toggleClass('collapsed');
+				if($('.icon-white', this).hasClass('icon-chevron-up'))
+					$('.icon-white', this).removeClass('icon-chevron-up').addClass('icon-chevron-down');
+				else
+					$('.icon-white', this).removeClass('icon-chevron-down').addClass('icon-chevron-up');
+			}).parent().hide();
 		},
 		startRecording:function (){
 			this.recordedEvents=[];

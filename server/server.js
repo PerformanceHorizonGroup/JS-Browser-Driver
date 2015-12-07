@@ -60,7 +60,7 @@ var host,
 		
 		autoRunSlaves:[], // a list of slaves to run automatically on startup
 		
-		configFileName:__dirname+'/server.conf.json', // it's pointless to set this in a config file ;-) . shall be overridden with command-line arguments
+		configFileName:process.cwd()+path.sep+'server.conf.json', // it's pointless to set this in a config file ;-) . shall be overridden with command-line arguments
 		
 		timeout:0 // timeout in seconds to wait before shutting down the server
 	},
@@ -85,96 +85,106 @@ function startServer(cfgOverrides){
 
 	if(cfgOverrides)
 		extend(true, cfg, cfgOverrides);
-	fs.exists(cfg.configFileName, function (exists){
-		if(exists){
-			console.log('reading configuration file '+cfg.configFileName);
-	//		JSON.parse(require('fs').readFileSync(configFileName).toString());
-			extend(true, cfg, JSON.parse(require('fs').readFileSync(cfg.configFileName).toString()));
-		}
-	
-		// process command-line arguments and override configuration if needed
-		for(var i=0, arg; i<processArguments.length; i++){
-	//		console.log('arg: ' + processArguments[i]);
-			if(arg=processArguments[i].match(/^port=(\d+)/))
-				cfg.server.port=arg[1];
-			else if(arg=processArguments[i].match(/^host=(.*)/))
-				cfg.server.host=arg[1];
-			else if(arg=processArguments[i].match(/^timeout=(\d+)/))
-				cfg.timeout=Number(arg[1]);
-//			else if(arg=processArguments[i].match(/^test=(.*)/)){
-//				/**
-//				 * TO-DO: support the option to run all tests without enumerating them all
-//				 */
-//				arg=arg[1].match(/^'(.*)'\.'(.*)'\.'(.*)'$/); // format: 'filename.js'.'moduleName'.'testName'
-//				if(arg){
-//					cfg.autoRunTests.push({
-//						name:arg[3],
-//						module:arg[2],
-//						fileName:arg[1]
-//					});
-//				}
-//			}
-			else if(arg=processArguments[i].match(/^autoRunSlaves=(.*)/)){
-				/**
-				 * TO-DO: support the option to run all slaves without enumerating them all
-				 */
-				arg=arg[1].split(','); // format: browser1,browser2,etc
-				cfg.autoRunSlaves=arg;
+	function loadConfigFile(){
+		fs.stat(cfg.configFileName, function (err, stats){
+			if(err){
+				console.error('The configuration file "'+cfg.configFileName+'" could not be found');
+			}else{
+				if(stats.isFile()){
+					console.log('reading configuration file '+cfg.configFileName);
+			//		JSON.parse(require('fs').readFileSync(configFileName).toString());
+					extend(true, cfg, JSON.parse(require('fs').readFileSync(cfg.configFileName).toString()));
+				
+					// process command-line arguments and override configuration if needed
+					for(var i=0, arg; i<processArguments.length; i++){
+				//		console.log('arg: ' + processArguments[i]);
+						if(arg=processArguments[i].match(/^port=(\d+)/))
+							cfg.server.port=arg[1];
+						else if(arg=processArguments[i].match(/^host=(.*)/))
+							cfg.server.host=arg[1];
+						else if(arg=processArguments[i].match(/^timeout=(\d+)/))
+							cfg.timeout=Number(arg[1]);
+			//			else if(arg=processArguments[i].match(/^test=(.*)/)){
+			//				/**
+			//				 * TO-DO: support the option to run all tests without enumerating them all
+			//				 */
+			//				arg=arg[1].match(/^'(.*)'\.'(.*)'\.'(.*)'$/); // format: 'filename.js'.'moduleName'.'testName'
+			//				if(arg){
+			//					cfg.autoRunTests.push({
+			//						name:arg[3],
+			//						module:arg[2],
+			//						fileName:arg[1]
+			//					});
+			//				}
+			//			}
+						else if(arg=processArguments[i].match(/^autoRunSlaves=(.*)/)){
+							/**
+							 * TO-DO: support the option to run all slaves without enumerating them all
+							 */
+							arg=arg[1].split(','); // format: browser1,browser2,etc
+							cfg.autoRunSlaves=arg;
+						}
+					}
+						
+				//	process.on('uncaughtException', function (err) {
+				//		console.log('Caught exception: ' + err.stack);
+				//		console.log(sys.inspect('err: '+err, 3));
+				//		if(err.type=='non_object_property_call'){
+				//			console.log('Assuming this happened in socket.io we keep running.');
+				//		}else{
+				//			console.log('The server is shutting down');
+				//			process.exit();
+				//		}
+				//	});
+					
+					var server={
+						appCfg:cfg,
+						webServer:Connect.createServer(
+			//				Connect.gzip(),
+						),
+						modules:[],
+						params:{
+							SERVER_ROOT:__dirname,
+							CLIENT_ROOT:path.resolve(__dirname, '../client')
+						},
+						processParamString:function (appStr){
+							return appStr.replace(/%([^%]+)%/g, function (match, p1, offset, string){
+								return server.params[p1];
+							});
+						}
+						
+					};
+					
+					(function (){
+						var s=server.webServer.listen(cfg.server.port, cfg.server.host);	// this is needed with Connect 2.x
+						console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
+					
+						server.io=require('socket.io').listen(s);
+						server.io.configure(function(){ // 'production'
+							server.io.set('log level', cfg.server.SocketIO.logLevel); 
+						});
+					}());
+					
+					server.clientManager=require('./clientManager').create({server:server});
+					for(var i=0; i<cfg.modules.length; i++)
+						server.modules.push(require(cfg.modules[i].requirePath).init(extend(true, {server:server}, cfg.modules[i])));
+				
+			//		for(var b=0; b<cfg.slaves.length; b++)
+			//			webServer.browserManager.addBrowser(extend({
+			//				testsQueue:cfg.autoRunTests.slice(0)
+			//			}, cfg.slaves[b]));
+				
+					if(cfg.timeout)
+						setTimeout(function (){
+							console.log('timed out. testing server is shutting down');
+							process.exit(); // this will not be a good idea if loaded as a module
+						}, cfg.timeout*1000);
+				}else if(stats.isDirectory()){
+					cfg.configFileName+=path.sep+'server.conf.json';
+					loadConfigFile();
+				}
 			}
-		}
-			
-	//	process.on('uncaughtException', function (err) {
-	//		console.log('Caught exception: ' + err.stack);
-	//		console.log(sys.inspect('err: '+err, 3));
-	//		if(err.type=='non_object_property_call'){
-	//			console.log('Assuming this happened in socket.io we keep running.');
-	//		}else{
-	//			console.log('The server is shutting down');
-	//			process.exit();
-	//		}
-	//	});
-		
-		var server={
-			appCfg:cfg,
-			webServer:Connect.createServer(
-//				Connect.gzip(),
-			),
-			modules:[],
-			params:{
-				SERVER_ROOT:__dirname,
-				CLIENT_ROOT:path.resolve(__dirname, '../client')
-			},
-			processParamString:function (appStr){
-				return appStr.replace(/%([^%]+)%/g, function (match, p1, offset, string){
-					return server.params[p1];
-				});
-			}
-			
-		};
-		
-		(function (){
-			var s=server.webServer.listen(cfg.server.port, cfg.server.host);	// this is needed with Connect 2.x
-			console.log('Server listening on port '+cfg.server.port+' at '+cfg.server.host);
-		
-			server.io=require('socket.io').listen(s);
-			server.io.configure(function(){ // 'production'
-				server.io.set('log level', cfg.server.SocketIO.logLevel); 
-			});
-		}());
-		
-		server.clientManager=require('./clientManager').create({server:server});
-		for(var i=0; i<cfg.modules.length; i++)
-			server.modules.push(require(cfg.modules[i].requirePath).init(extend(true, {server:server}, cfg.modules[i])));
-	
-//		for(var b=0; b<cfg.slaves.length; b++)
-//			webServer.browserManager.addBrowser(extend({
-//				testsQueue:cfg.autoRunTests.slice(0)
-//			}, cfg.slaves[b]));
-	
-		if(cfg.timeout)
-			setTimeout(function (){
-				console.log('timed out. testing server is shutting down');
-				process.exit(); // this will not be a good idea if loaded as a module
-			}, cfg.timeout*1000);
-	});
+		});
+	}
+	loadConfigFile();
 }

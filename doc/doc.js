@@ -1,25 +1,26 @@
-var api=new (require('../../Documentor/Documentor').Api)({
-	ns:{
-		name:'BrowserDriver API',
-		description:"..."
-	},
-	sourceFiles:[
-		'../server/browserManager.js',
-		'../server/server.js',
-		'../server/webServer.js',
-		'../client/browserDriver.js',
-
-		'../client/manager/manager.js'
-	],
-	sourceLoader:new (require('../../Documentor/SourceLoader').FileSourceLoader)(),
-	sourceProcessor:new (require('../../Documentor/SourceProcessor').PHGSourceProcessor)(),
-	listeners:{
-		'sourceProcessed':function (fileURL){
-			if(api.sourceFiles.length==0)
-				(new (require('../../Documentor/render/PHGDoc/PHGDocRenderer').PHGDocRenderer)({exportPath:'.'})).render(this);
+var documentor=require('documentor.js'),
+	api=new documentor.Api({
+		ns:{
+			name:'BrowserDriver API',
+			description:"..."
+		},
+		sourceFiles:[
+//			'../server/clientManager.js',
+			'../server/server.js',
+			'../client/browserDriver.js',
+	
+			'../client/manager/manager.js'
+		],
+		sourceLoader:new documentor.FileSourceLoader(),
+		sourceProcessor:new documentor.PHGDoc.PHGSourceProcessor(),
+		renderer:new documentor.PHGDoc.PHGDocRenderer({exportPath:__dirname}),
+		listeners:{
+			'sourceQueueEmpty':function (){
+				// try to set the content of README.md as the desription
+				this.ns.description='<pre>'+this.sourceLoader.getSourceFile(require('path').resolve(__dirname, '../README.md'))+'</pre>';
+			}
 		}
-	}
-});
+	});
 
 //documentor.processArguments(process.argv);
 //documentor.run();
