@@ -21,7 +21,7 @@
 		"driver"
 	],
 	"dependencies" :{
-	    "connect":"<2.3",
+	    "connect":"<3.8",
 	    "socket.io":"<=0.9.x",
 	    "jquery.extend":"*"
 	},
